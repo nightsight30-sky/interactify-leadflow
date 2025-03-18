@@ -43,6 +43,11 @@ const LeadInteraction = ({ leadId, isAdmin = false, onInteractionComplete }: Lea
     }
   };
 
+  // Handle SelectValue change with type safety
+  const handleSelectChange = (value: string) => {
+    setNewStatus(value as LeadStatus);
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -81,7 +86,10 @@ const LeadInteraction = ({ leadId, isAdmin = false, onInteractionComplete }: Lea
           {isAdmin && (
             <div className="space-y-2">
               <div className="text-sm font-medium">Update Lead Status</div>
-              <Select value={newStatus} onValueChange={setNewStatus}>
+              <Select 
+                value={newStatus} 
+                onValueChange={handleSelectChange}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Keep current status" />
                 </SelectTrigger>

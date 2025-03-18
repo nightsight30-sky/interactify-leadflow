@@ -84,6 +84,11 @@ const LeadDetailDialog = ({ leadId, isAdmin = false, onLeadUpdated, trigger }: L
     return 'text-gray-600 bg-gray-50';
   };
 
+  // Handle SelectValue change with type safety
+  const handleSelectChange = (value: string) => {
+    setStatus(value as LeadStatus);
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -163,7 +168,10 @@ const LeadDetailDialog = ({ leadId, isAdmin = false, onLeadUpdated, trigger }: L
               <div className="mt-6 space-y-4">
                 <div className="flex items-center space-x-4">
                   <span className="text-sm text-gray-700">Update Status:</span>
-                  <Select value={status} onValueChange={setStatus}>
+                  <Select 
+                    value={status} 
+                    onValueChange={handleSelectChange}
+                  >
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
