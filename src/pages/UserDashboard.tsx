@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,14 +11,15 @@ import {
   Bell, LogOut, User, Settings, Mail, PlusCircle
 } from 'lucide-react';
 
-// Sample data
+type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
+
 const mockLeads = [
   {
     id: '1',
     name: 'John Smith',
     email: 'john@example.com',
     score: 85,
-    status: 'qualified' as const,
+    status: 'qualified' as LeadStatus,
     lastActivity: '2 days ago',
     requestType: 'Product Inquiry',
     message: 'I\'m interested in your AI lead scoring system. Can you tell me more about the pricing?',
@@ -30,7 +30,7 @@ const mockLeads = [
     name: 'Emily Johnson',
     email: 'emily@example.com',
     score: 72,
-    status: 'contacted' as const,
+    status: 'contacted' as LeadStatus,
     lastActivity: '5 days ago',
     requestType: 'Demo Request',
     message: 'We\'re looking for a lead management system for our sales team of 15 people. Would like to see how your platform works.',
@@ -41,11 +41,33 @@ const mockLeads = [
     name: 'Michael Brown',
     email: 'michael@example.com',
     score: 45,
-    status: 'new' as const,
+    status: 'new' as LeadStatus,
     lastActivity: '1 week ago',
     requestType: 'Support',
     message: 'Having some questions about the WhatsApp integration. How does it work with our existing system?',
     interactions: 1
+  },
+  {
+    id: '4',
+    name: 'Sarah Wilson',
+    email: 'sarah@example.com',
+    score: 92,
+    status: 'converted' as LeadStatus,
+    lastActivity: '3 days ago',
+    requestType: 'Purchase',
+    message: 'Just signed up for the premium plan. Looking forward to getting started!',
+    interactions: 12
+  },
+  {
+    id: '5',
+    name: 'David Lee',
+    email: 'david@example.com',
+    score: 23,
+    status: 'lost' as LeadStatus,
+    lastActivity: '2 weeks ago',
+    requestType: 'Product Inquiry',
+    message: 'Your competitor offered a better price. Maybe next time.',
+    interactions: 2
   }
 ];
 
@@ -54,7 +76,6 @@ const UserDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   
   const handleLogout = () => {
-    // In a real app, handle logout logic here
     navigate('/login');
   };
 
@@ -172,17 +193,21 @@ const UserDashboard = () => {
               
               <TabsContent value="active" className="mt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {mockLeads.filter(lead => lead.status !== 'converted' && lead.status !== 'lost').map(lead => (
-                    <LeadCard key={lead.id} lead={lead} />
-                  ))}
+                  {mockLeads
+                    .filter(lead => lead.status !== 'converted' && lead.status !== 'lost')
+                    .map(lead => (
+                      <LeadCard key={lead.id} lead={lead} />
+                    ))}
                 </div>
               </TabsContent>
               
               <TabsContent value="completed" className="mt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {mockLeads.filter(lead => lead.status === 'converted' || lead.status === 'lost').map(lead => (
-                    <LeadCard key={lead.id} lead={lead} />
-                  ))}
+                  {mockLeads
+                    .filter(lead => lead.status === 'converted' || lead.status === 'lost')
+                    .map(lead => (
+                      <LeadCard key={lead.id} lead={lead} />
+                    ))}
                 </div>
               </TabsContent>
             </Tabs>
