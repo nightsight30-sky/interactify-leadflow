@@ -5,19 +5,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { Send } from 'lucide-react';
+import { leadsService } from '@/utils/leadsService';
+import { toast } from "sonner";
 
 const requestTypes = [
-  { value: 'product-inquiry', label: 'Product Inquiry' },
-  { value: 'support', label: 'Support Request' },
-  { value: 'demo', label: 'Request Demo' },
-  { value: 'pricing', label: 'Pricing Information' },
-  { value: 'other', label: 'Other' }
+  { value: 'Product Inquiry', label: 'Product Inquiry' },
+  { value: 'Support', label: 'Support Request' },
+  { value: 'Demo Request', label: 'Request Demo' },
+  { value: 'Pricing', label: 'Pricing Information' },
+  { value: 'Feedback', label: 'Feedback' }
 ];
 
 const LeadForm = () => {
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -50,14 +50,14 @@ const LeadForm = () => {
     
     setIsSubmitting(true);
     
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Success response
-      toast({
-        title: "Request submitted",
-        description: "We'll get back to you soon!",
+      // Use the leadsService to add the lead
+      await leadsService.addLead({
+        name: formData.name,
+        email: formData.email,
+        requestType: formData.requestType,
+        message: formData.message,
+        status: 'new'
       });
       
       // Reset form
@@ -66,6 +66,11 @@ const LeadForm = () => {
         email: '',
         requestType: '',
         message: ''
+      });
+      
+      toast({
+        title: "Request submitted",
+        description: "We'll get back to you soon!",
       });
     } catch (error) {
       toast({
