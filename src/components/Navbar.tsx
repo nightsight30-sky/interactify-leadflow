@@ -40,14 +40,17 @@ const Navbar = () => {
             <Link to="/" className="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
               Home
             </Link>
-            <Link to="#features" className="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
-              Features
-            </Link>
-            <Link to="#about" className="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
+            <Link to="/about" className="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
               About
             </Link>
-            <Link to="/user-dashboard" className="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
-              Dashboard
+            <Link to="/pricing" className="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
+              Pricing
+            </Link>
+            <Link to="/whatsapp-integration" className="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
+              WhatsApp
+            </Link>
+            <Link to="/learn" className="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
+              Learn
             </Link>
             <div className="flex space-x-3">
               <Button variant="outline" asChild>
@@ -78,14 +81,17 @@ const Navbar = () => {
             <Link to="/" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-primary">
               Home
             </Link>
-            <Link to="#features" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-primary">
-              Features
-            </Link>
-            <Link to="#about" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-primary">
+            <Link to="/about" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-primary">
               About
             </Link>
-            <Link to="/user-dashboard" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-primary">
-              Dashboard
+            <Link to="/pricing" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-primary">
+              Pricing
+            </Link>
+            <Link to="/whatsapp-integration" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-primary">
+              WhatsApp
+            </Link>
+            <Link to="/learn" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-primary">
+              Learn
             </Link>
             <div className="flex flex-col space-y-2 pt-3 pb-2">
               <Button variant="outline" asChild className="w-full">

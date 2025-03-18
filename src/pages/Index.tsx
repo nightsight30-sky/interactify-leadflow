@@ -38,9 +38,9 @@ const Index = () => {
                     </Link>
                   </Button>
                   <Button variant="outline" asChild className="rounded-full px-6">
-                    <a href="#" target="_blank" rel="noopener noreferrer">
+                    <Link to="/whatsapp-integration">
                       Learn More <ArrowUpRight size={16} className="ml-2" />
-                    </a>
+                    </Link>
                   </Button>
                 </div>
                 
