@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -12,103 +12,81 @@ import { Link, useNavigate } from 'react-router-dom';
 import { 
   BarChart3, ListFilter, MessageSquare, Search, 
   Bell, LogOut, User, Settings, Mail, Brain, 
-  LineChart, PieChart, Calendar, Home 
+  LineChart, PieChart, Calendar, Home, Loader2
 } from 'lucide-react';
-
-// Sample data
-const mockLeads = [
-  {
-    id: '1',
-    name: 'John Smith',
-    email: 'john@example.com',
-    score: 85,
-    status: 'qualified' as const,
-    lastActivity: '2 days ago',
-    requestType: 'Product Inquiry',
-    message: 'I\'m interested in your AI lead scoring system. Can you tell me more about the pricing?',
-    interactions: 8
-  },
-  {
-    id: '2',
-    name: 'Emily Johnson',
-    email: 'emily@example.com',
-    score: 72,
-    status: 'contacted' as const,
-    lastActivity: '5 days ago',
-    requestType: 'Demo Request',
-    message: 'We\'re looking for a lead management system for our sales team of 15 people. Would like to see how your platform works.',
-    interactions: 3
-  },
-  {
-    id: '3',
-    name: 'Michael Brown',
-    email: 'michael@example.com',
-    score: 45,
-    status: 'new' as const,
-    lastActivity: '1 week ago',
-    requestType: 'Support',
-    message: 'Having some questions about the WhatsApp integration. How does it work with our existing system?',
-    interactions: 1
-  },
-  {
-    id: '4',
-    name: 'Sarah Wilson',
-    email: 'sarah@example.com',
-    score: 92,
-    status: 'qualified' as const,
-    lastActivity: '1 day ago',
-    requestType: 'Demo Request',
-    message: 'Our marketing team is looking for a new lead management solution that integrates with our CRM. Would like to see a demo.',
-    interactions: 5
-  },
-  {
-    id: '5',
-    name: 'David Lee',
-    email: 'david@example.com',
-    score: 31,
-    status: 'new' as const,
-    lastActivity: '3 days ago',
-    requestType: 'Pricing',
-    message: 'How much does your basic plan cost? We\'re a small business with about 5 sales reps.',
-    interactions: 2
-  },
-  {
-    id: '6',
-    name: 'Jessica Chen',
-    email: 'jessica@example.com',
-    score: 78,
-    status: 'contacted' as const,
-    lastActivity: '4 days ago',
-    requestType: 'Product Inquiry',
-    message: 'Does your platform integrate with Salesforce? We need a solution that works with our existing tech stack.',
-    interactions: 4
-  },
-];
+import { leadsService, Lead, LeadStatus } from '@/utils/leadsService';
+import { toast } from 'sonner';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [activeTab, setActiveTab] = useState('leads');
+  
+  const fetchLeads = async () => {
+    setIsLoading(true);
+    try {
+      const data = await leadsService.getLeads();
+      setLeads(data);
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+      toast.error('Failed to load leads');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeads();
+  }, []);
   
   const handleLogout = () => {
-    // In a real app, handle logout logic here
+    toast.success('Successfully logged out');
     navigate('/login');
   };
 
   // Filter leads based on search query and status filter
-  const filteredLeads = mockLeads.filter(lead => {
+  const filteredLeads = leads.filter(lead => {
     const matchesSearch = 
       lead.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.message.toLowerCase().includes(searchQuery.toLowerCase());
+      lead.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.requestType.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
 
+  // Get leads for different tabs
+  const getTabLeads = (tab: string) => {
+    if (tab === 'leads') return filteredLeads;
+    if (tab === 'highValue') return filteredLeads.filter(lead => lead.score >= 70);
+    if (tab === 'recentActivity') return filteredLeads.filter(lead => 
+      lead.lastActivity.includes('day') || 
+      lead.lastActivity.includes('hour') || 
+      lead.lastActivity.includes('minute') || 
+      lead.lastActivity.includes('Just now') || 
+      lead.lastActivity.includes('1 week')
+    );
+    return filteredLeads;
+  };
+
   // Sort leads by score (highest first)
-  const sortedLeads = [...filteredLeads].sort((a, b) => b.score - a.score);
+  const sortedLeads = [...getTabLeads(activeTab)].sort((a, b) => b.score - a.score);
+
+  const runAiAnalysis = () => {
+    toast.promise(
+      new Promise(resolve => setTimeout(resolve, 2000)),
+      {
+        loading: 'Analyzing lead data...',
+        success: 'AI analysis complete',
+        error: 'Analysis failed',
+      }
+    );
+  };
 
   return (
     <SidebarProvider>
@@ -197,11 +175,11 @@ const AdminDashboard = () => {
               </div>
               
               <div className="flex items-center space-x-3 mt-4 sm:mt-0">
-                <Button variant="outline">
+                <Button variant="outline" onClick={() => toast.success("Reports generated")}>
                   <PieChart size={16} className="mr-2" />
                   Reports
                 </Button>
-                <Button>
+                <Button onClick={() => toast.success("Analytics dashboard opened")}>
                   <LineChart size={16} className="mr-2" />
                   Analytics
                 </Button>
@@ -243,7 +221,7 @@ const AdminDashboard = () => {
               </div>
             </div>
             
-            <Tabs defaultValue="leads" className="mb-8">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
               <TabsList>
                 <TabsTrigger value="leads">All Leads</TabsTrigger>
                 <TabsTrigger value="highValue">High Value</TabsTrigger>
@@ -256,10 +234,38 @@ const AdminDashboard = () => {
                     <CardTitle>Lead Management</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {sortedLeads.length > 0 ? (
+                    {isLoading ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {Array(6).fill(0).map((_, index) => (
+                          <Card key={index} className="animate-pulse">
+                            <CardHeader className="p-4">
+                              <div className="flex items-center space-x-3">
+                                <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+                                <div className="space-y-2">
+                                  <div className="h-4 bg-gray-200 rounded w-24"></div>
+                                  <div className="h-3 bg-gray-200 rounded w-32"></div>
+                                </div>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="p-4">
+                              <div className="space-y-3">
+                                <div className="h-3 bg-gray-200 rounded"></div>
+                                <div className="h-3 bg-gray-200 rounded"></div>
+                                <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : sortedLeads.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {sortedLeads.map(lead => (
-                          <LeadCard key={lead.id} lead={lead} isAdmin={true} />
+                          <LeadCard 
+                            key={lead.id} 
+                            lead={lead} 
+                            isAdmin={true} 
+                            onLeadUpdated={fetchLeads} 
+                          />
                         ))}
                       </div>
                     ) : (
@@ -283,11 +289,48 @@ const AdminDashboard = () => {
                     <CardTitle>High Value Leads</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {mockLeads.filter(lead => lead.score >= 70).map(lead => (
-                        <LeadCard key={lead.id} lead={lead} isAdmin={true} />
-                      ))}
-                    </div>
+                    {isLoading ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {Array(3).fill(0).map((_, index) => (
+                          <Card key={index} className="animate-pulse">
+                            <CardHeader className="p-4">
+                              <div className="flex items-center space-x-3">
+                                <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+                                <div className="space-y-2">
+                                  <div className="h-4 bg-gray-200 rounded w-24"></div>
+                                  <div className="h-3 bg-gray-200 rounded w-32"></div>
+                                </div>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="p-4">
+                              <div className="space-y-3">
+                                <div className="h-3 bg-gray-200 rounded"></div>
+                                <div className="h-3 bg-gray-200 rounded"></div>
+                                <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : sortedLeads.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {sortedLeads.map(lead => (
+                          <LeadCard 
+                            key={lead.id} 
+                            lead={lead} 
+                            isAdmin={true} 
+                            onLeadUpdated={fetchLeads} 
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <p className="text-gray-500">No high value leads found.</p>
+                        <Button variant="outline" className="mt-4" onClick={() => setActiveTab('leads')}>
+                          View all leads
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -298,14 +341,48 @@ const AdminDashboard = () => {
                     <CardTitle>Recent Activity</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {mockLeads.filter(lead => 
-                        lead.lastActivity.includes('day') || 
-                        lead.lastActivity.includes('1 week')
-                      ).map(lead => (
-                        <LeadCard key={lead.id} lead={lead} isAdmin={true} />
-                      ))}
-                    </div>
+                    {isLoading ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {Array(3).fill(0).map((_, index) => (
+                          <Card key={index} className="animate-pulse">
+                            <CardHeader className="p-4">
+                              <div className="flex items-center space-x-3">
+                                <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+                                <div className="space-y-2">
+                                  <div className="h-4 bg-gray-200 rounded w-24"></div>
+                                  <div className="h-3 bg-gray-200 rounded w-32"></div>
+                                </div>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="p-4">
+                              <div className="space-y-3">
+                                <div className="h-3 bg-gray-200 rounded"></div>
+                                <div className="h-3 bg-gray-200 rounded"></div>
+                                <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : sortedLeads.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {sortedLeads.map(lead => (
+                          <LeadCard 
+                            key={lead.id} 
+                            lead={lead} 
+                            isAdmin={true} 
+                            onLeadUpdated={fetchLeads} 
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <p className="text-gray-500">No recent activity found.</p>
+                        <Button variant="outline" className="mt-4" onClick={() => setActiveTab('leads')}>
+                          View all leads
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -315,7 +392,7 @@ const AdminDashboard = () => {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>AI Insights</CardTitle>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={runAiAnalysis}>
                     <Brain size={14} className="mr-2" />
                     Analyze All Leads
                   </Button>
@@ -341,7 +418,16 @@ const AdminDashboard = () => {
                         Leads that receive a follow-up within 24 hours show a 40% higher conversion rate. 
                         5 leads in your pipeline haven't been contacted in over 48 hours.
                       </p>
-                      <Button variant="outline" size="sm" className="mt-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2"
+                        onClick={() => {
+                          setActiveTab('leads');
+                          setStatusFilter('new');
+                          toast.success('Filtered to show new leads');
+                        }}
+                      >
                         View Leads
                       </Button>
                     </div>

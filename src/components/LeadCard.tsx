@@ -1,23 +1,16 @@
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Mail, ExternalLink, Clock, BarChart, MessageSquare } from 'lucide-react';
+import { BarChart, Clock, MessageSquare } from 'lucide-react';
+import LeadDetailDialog from './LeadDetailDialog';
+import LeadInteraction from './LeadInteraction';
+import { Lead } from '@/utils/leadsService';
 
 interface LeadCardProps {
-  lead: {
-    id: string;
-    name: string;
-    email: string;
-    score: number;
-    status: 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
-    lastActivity: string;
-    requestType: string;
-    message: string;
-    interactions: number;
-  };
+  lead: Lead;
   isAdmin?: boolean;
+  onLeadUpdated: () => void;
 }
 
 const statusColors = {
@@ -28,7 +21,7 @@ const statusColors = {
   lost: 'bg-red-100 text-red-800',
 };
 
-const LeadCard = ({ lead, isAdmin = false }: LeadCardProps) => {
+const LeadCard = ({ lead, isAdmin = false, onLeadUpdated }: LeadCardProps) => {
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600 bg-green-50';
     if (score >= 60) return 'text-amber-600 bg-amber-50';
@@ -101,17 +94,22 @@ const LeadCard = ({ lead, isAdmin = false }: LeadCardProps) => {
       <CardFooter className="p-4 pt-0 flex justify-between">
         {isAdmin ? (
           <>
-            <Button size="sm" variant="outline" className="flex-1 mr-2">
-              <Mail size={14} className="mr-1" /> Email
-            </Button>
-            <Button size="sm" className="flex-1">
-              View Details
-            </Button>
+            <LeadInteraction 
+              leadId={lead.id} 
+              isAdmin={true} 
+              onInteractionComplete={onLeadUpdated} 
+            />
+            <LeadDetailDialog
+              leadId={lead.id}
+              isAdmin={true}
+              onLeadUpdated={onLeadUpdated}
+            />
           </>
         ) : (
-          <Button size="sm" variant="outline" className="w-full">
-            <ExternalLink size={14} className="mr-1" /> View Details
-          </Button>
+          <LeadDetailDialog
+            leadId={lead.id}
+            onLeadUpdated={onLeadUpdated}
+          />
         )}
       </CardFooter>
     </Card>

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -8,76 +9,56 @@ import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger } from '@/comp
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Home, ListFilter, MessageSquare, Search, 
-  Bell, LogOut, User, Settings, Mail, PlusCircle
+  Bell, LogOut, User, Settings, Mail
 } from 'lucide-react';
-
-type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
-
-const mockLeads = [
-  {
-    id: '1',
-    name: 'John Smith',
-    email: 'john@example.com',
-    score: 85,
-    status: 'qualified' as LeadStatus,
-    lastActivity: '2 days ago',
-    requestType: 'Product Inquiry',
-    message: 'I\'m interested in your AI lead scoring system. Can you tell me more about the pricing?',
-    interactions: 8
-  },
-  {
-    id: '2',
-    name: 'Emily Johnson',
-    email: 'emily@example.com',
-    score: 72,
-    status: 'contacted' as LeadStatus,
-    lastActivity: '5 days ago',
-    requestType: 'Demo Request',
-    message: 'We\'re looking for a lead management system for our sales team of 15 people. Would like to see how your platform works.',
-    interactions: 3
-  },
-  {
-    id: '3',
-    name: 'Michael Brown',
-    email: 'michael@example.com',
-    score: 45,
-    status: 'new' as LeadStatus,
-    lastActivity: '1 week ago',
-    requestType: 'Support',
-    message: 'Having some questions about the WhatsApp integration. How does it work with our existing system?',
-    interactions: 1
-  },
-  {
-    id: '4',
-    name: 'Sarah Wilson',
-    email: 'sarah@example.com',
-    score: 92,
-    status: 'converted' as LeadStatus,
-    lastActivity: '3 days ago',
-    requestType: 'Purchase',
-    message: 'Just signed up for the premium plan. Looking forward to getting started!',
-    interactions: 12
-  },
-  {
-    id: '5',
-    name: 'David Lee',
-    email: 'david@example.com',
-    score: 23,
-    status: 'lost' as LeadStatus,
-    lastActivity: '2 weeks ago',
-    requestType: 'Product Inquiry',
-    message: 'Your competitor offered a better price. Maybe next time.',
-    interactions: 2
-  }
-];
+import NewLeadForm from '@/components/NewLeadForm';
+import { leadsService, Lead } from '@/utils/leadsService';
+import { toast } from 'sonner';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  
+  const fetchLeads = async () => {
+    setIsLoading(true);
+    try {
+      const data = await leadsService.getLeads();
+      setLeads(data);
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+      toast.error('Failed to load your requests');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeads();
+  }, []);
   
   const handleLogout = () => {
+    toast.success('Successfully logged out');
     navigate('/login');
   };
+
+  const filteredLeads = leads.filter(lead => {
+    // Filter by search query
+    const matchesQuery = 
+      lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.requestType.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Filter by tab
+    if (activeTab === 'all') return matchesQuery;
+    if (activeTab === 'active') return matchesQuery && lead.status !== 'converted' && lead.status !== 'lost';
+    if (activeTab === 'completed') return matchesQuery && (lead.status === 'converted' || lead.status === 'lost');
+    
+    return matchesQuery;
+  });
 
   return (
     <SidebarProvider>
@@ -152,12 +133,9 @@ const UserDashboard = () => {
                 <h2 className="text-2xl font-bold mb-1">Welcome back, John</h2>
                 <p className="text-gray-500">Track your requests and lead activity</p>
               </div>
-              <Button className="mt-4 sm:mt-0" asChild>
-                <Link to="#contact">
-                  <PlusCircle size={16} className="mr-2" />
-                  New Request
-                </Link>
-              </Button>
+              <div className="mt-4 sm:mt-0">
+                <NewLeadForm onLeadAdded={fetchLeads} />
+              </div>
             </div>
             
             <div className="mb-8 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
@@ -176,7 +154,7 @@ const UserDashboard = () => {
               </Button>
             </div>
             
-            <Tabs defaultValue="all" className="mb-8">
+            <Tabs defaultValue="all" className="mb-8" value={activeTab} onValueChange={setActiveTab}>
               <TabsList>
                 <TabsTrigger value="all">All Requests</TabsTrigger>
                 <TabsTrigger value="active">Active</TabsTrigger>
@@ -184,31 +162,131 @@ const UserDashboard = () => {
               </TabsList>
               
               <TabsContent value="all" className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {mockLeads.map(lead => (
-                    <LeadCard key={lead.id} lead={lead} />
-                  ))}
-                </div>
+                {isLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Array(3).fill(0).map((_, index) => (
+                      <Card key={index} className="animate-pulse">
+                        <CardHeader className="p-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+                            <div className="space-y-2">
+                              <div className="h-4 bg-gray-200 rounded w-24"></div>
+                              <div className="h-3 bg-gray-200 rounded w-32"></div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            <div className="h-3 bg-gray-200 rounded"></div>
+                            <div className="h-3 bg-gray-200 rounded"></div>
+                            <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : filteredLeads.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredLeads.map(lead => (
+                      <LeadCard 
+                        key={lead.id} 
+                        lead={lead} 
+                        onLeadUpdated={fetchLeads} 
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 border rounded-lg bg-gray-50">
+                    <p className="text-gray-500 mb-4">No requests found</p>
+                    <NewLeadForm onLeadAdded={fetchLeads} />
+                  </div>
+                )}
               </TabsContent>
               
               <TabsContent value="active" className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {mockLeads
-                    .filter(lead => lead.status !== 'converted' && lead.status !== 'lost')
-                    .map(lead => (
-                      <LeadCard key={lead.id} lead={lead} />
+                {isLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Array(2).fill(0).map((_, index) => (
+                      <Card key={index} className="animate-pulse">
+                        <CardHeader className="p-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+                            <div className="space-y-2">
+                              <div className="h-4 bg-gray-200 rounded w-24"></div>
+                              <div className="h-3 bg-gray-200 rounded w-32"></div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            <div className="h-3 bg-gray-200 rounded"></div>
+                            <div className="h-3 bg-gray-200 rounded"></div>
+                            <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
-                </div>
+                  </div>
+                ) : filteredLeads.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredLeads.map(lead => (
+                      <LeadCard 
+                        key={lead.id} 
+                        lead={lead}
+                        onLeadUpdated={fetchLeads}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 border rounded-lg bg-gray-50">
+                    <p className="text-gray-500 mb-4">No active requests found</p>
+                    <NewLeadForm onLeadAdded={fetchLeads} />
+                  </div>
+                )}
               </TabsContent>
               
               <TabsContent value="completed" className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {mockLeads
-                    .filter(lead => lead.status === 'converted' || lead.status === 'lost')
-                    .map(lead => (
-                      <LeadCard key={lead.id} lead={lead} />
+                {isLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Array(1).fill(0).map((_, index) => (
+                      <Card key={index} className="animate-pulse">
+                        <CardHeader className="p-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+                            <div className="space-y-2">
+                              <div className="h-4 bg-gray-200 rounded w-24"></div>
+                              <div className="h-3 bg-gray-200 rounded w-32"></div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            <div className="h-3 bg-gray-200 rounded"></div>
+                            <div className="h-3 bg-gray-200 rounded"></div>
+                            <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
-                </div>
+                  </div>
+                ) : filteredLeads.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredLeads.map(lead => (
+                      <LeadCard 
+                        key={lead.id} 
+                        lead={lead}
+                        onLeadUpdated={fetchLeads}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 border rounded-lg bg-gray-50">
+                    <p className="text-gray-500 mb-4">No completed requests found</p>
+                    <Button variant="outline" onClick={() => setActiveTab('all')}>
+                      View all requests
+                    </Button>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
             
