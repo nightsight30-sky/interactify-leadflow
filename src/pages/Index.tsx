@@ -6,7 +6,7 @@ import FeatureSection from '@/components/FeatureSection';
 import LeadForm from '@/components/LeadForm';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { ArrowRight, MessageSquare, ArrowUpRight, LightningBolt, BarChart2, Users } from 'lucide-react';
+import { ArrowRight, MessageSquare, ArrowUpRight, Zap, BarChart2, Users } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -126,7 +126,7 @@ const Index = () => {
               <div className="space-y-8">
                 <div className="flex space-x-4">
                   <div className="flex-shrink-0 w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                    <LightningBolt size={24} className="text-primary" />
+                    <Zap size={24} className="text-primary" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold mb-3">Fast Implementation</h3>
