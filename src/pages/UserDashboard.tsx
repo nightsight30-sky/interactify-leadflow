@@ -111,7 +111,7 @@ const UserDashboard = () => {
         requestType: formData.requestType,
         message: formData.message,
         status: 'new'
-      }, true);
+      }, false);
       fetchLeads();
       toast.success('Request submitted successfully');
     } catch (error) {

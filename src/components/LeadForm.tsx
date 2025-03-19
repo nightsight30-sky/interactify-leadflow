@@ -44,7 +44,7 @@ const LeadForm = () => {
         requestType: data.requestType,
         message: data.message,
         status: 'new'
-      }, true); // passing true to mark as a guest lead
+      }, true); // explicitly passing true to mark as a guest lead
       
       form.reset();
       toast.success("Your request has been submitted!");
