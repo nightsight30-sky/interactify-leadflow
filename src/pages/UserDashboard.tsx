@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import LeadCard from '@/components/LeadCard';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, ListFilter, MessageSquare, Search, 
   Bell, LogOut, User, Settings, Mail
@@ -17,13 +17,41 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [activeMainTab, setActiveMainTab] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [userEmail, setUserEmail] = useState('john@example.com');
-  const [userName, setUserName] = useState('John');
+  
+  const getUserData = () => {
+    if (location.state?.userEmail && location.state?.userName) {
+      localStorage.setItem('userEmail', location.state.userEmail);
+      localStorage.setItem('userName', location.state.userName);
+      return {
+        email: location.state.userEmail,
+        name: location.state.userName
+      };
+    }
+    
+    const storedEmail = localStorage.getItem('userEmail');
+    const storedName = localStorage.getItem('userName');
+    
+    if (storedEmail && storedName) {
+      return {
+        email: storedEmail,
+        name: storedName
+      };
+    }
+    
+    toast.error('User session expired. Please login again.');
+    navigate('/login');
+    return { email: '', name: '' };
+  };
+  
+  const userData = getUserData();
+  const [userEmail, setUserEmail] = useState(userData.email);
+  const [userName, setUserName] = useState(userData.name);
   
   const fetchLeads = async () => {
     setIsLoading(true);
@@ -39,10 +67,14 @@ const UserDashboard = () => {
   };
 
   useEffect(() => {
-    fetchLeads();
+    if (userEmail) {
+      fetchLeads();
+    }
   }, [userEmail]);
   
   const handleLogout = () => {
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
     toast.success('Successfully logged out');
     navigate('/login');
   };
@@ -66,6 +98,7 @@ const UserDashboard = () => {
   };
 
   const getInitials = (name: string) => {
+    if (!name) return '';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
@@ -77,13 +110,19 @@ const UserDashboard = () => {
         requestType: formData.requestType,
         message: formData.message,
         status: 'new'
-      }, false);
+      }, true);
       fetchLeads();
       toast.success('Request submitted successfully');
     } catch (error) {
       console.error('Error submitting lead:', error);
       toast.error('Failed to submit your request');
     }
+  };
+
+  const updateUserProfile = () => {
+    localStorage.setItem('userEmail', userEmail);
+    localStorage.setItem('userName', userName);
+    toast.success("Profile updated successfully");
   };
 
   return (
@@ -386,7 +425,7 @@ const UserDashboard = () => {
                           </AvatarFallback>
                         </Avatar>
                         <div className="text-center">
-                          <h3 className="text-lg font-semibold">{userName} Smith</h3>
+                          <h3 className="text-lg font-semibold">{userName}</h3>
                           <p className="text-sm text-gray-500">{userEmail}</p>
                         </div>
                         <Button variant="outline" size="sm" className="w-full">
@@ -400,13 +439,25 @@ const UserDashboard = () => {
                           <div className="space-y-2">
                             <label className="text-sm font-medium">First Name</label>
                             <Input 
-                              value={userName} 
-                              onChange={(e) => setUserName(e.target.value)} 
+                              value={userName.split(' ')[0] || userName} 
+                              onChange={(e) => setUserName(prev => {
+                                const parts = prev.split(' ');
+                                if (parts.length > 1) {
+                                  return `${e.target.value} ${parts.slice(1).join(' ')}`;
+                                }
+                                return e.target.value;
+                              })} 
                             />
                           </div>
                           <div className="space-y-2">
                             <label className="text-sm font-medium">Last Name</label>
-                            <Input defaultValue="Smith" />
+                            <Input 
+                              value={userName.split(' ').slice(1).join(' ') || ''} 
+                              onChange={(e) => setUserName(prev => {
+                                const parts = prev.split(' ');
+                                return `${parts[0] || ''} ${e.target.value}`;
+                              })}
+                            />
                           </div>
                           <div className="space-y-2">
                             <label className="text-sm font-medium">Email</label>
@@ -419,12 +470,12 @@ const UserDashboard = () => {
                           </div>
                           <div className="space-y-2">
                             <label className="text-sm font-medium">Phone</label>
-                            <Input defaultValue="+1 (555) 123-4567" />
+                            <Input placeholder="Enter your phone number" />
                           </div>
                         </div>
                         
                         <div className="pt-4 flex justify-end">
-                          <Button onClick={() => toast.success("Profile updated successfully")}>
+                          <Button onClick={updateUserProfile}>
                             Save Changes
                           </Button>
                         </div>

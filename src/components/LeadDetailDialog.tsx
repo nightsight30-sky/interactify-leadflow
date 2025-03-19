@@ -196,6 +196,8 @@ const LeadDetailDialog = ({ leadId, isAdmin = false, onLeadUpdated, trigger }: L
                 <div className="flex space-x-3 mt-6">
                   <LeadInteraction 
                     leadId={lead.id}
+                    recipientEmail={lead.email}
+                    recipientName={lead.name}
                     isAdmin={true}
                     onInteractionComplete={() => {
                       fetchLead();
