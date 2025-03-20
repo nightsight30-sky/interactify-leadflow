@@ -36,11 +36,11 @@ const mockEmails: Email[] = [
     from: 'support@leadflow.com',
     to: 'user@example.com',
     date: '2 hours ago',
-    preview: 'We've reviewed your request about marketing services and would like to schedule a call...',
+    preview: "We've reviewed your request about marketing services and would like to schedule a call...",
     read: false,
     important: true,
     category: 'inbox',
-    fullMessage: 'Dear Customer,\n\nWe've reviewed your request about marketing services and would like to schedule a call to discuss your needs in more detail. Our marketing specialist would be happy to provide a customized solution for your business.\n\nPlease let us know what times work best for you this week.\n\nBest regards,\nThe LeadFlow Team'
+    fullMessage: "Dear Customer,\n\nWe've reviewed your request about marketing services and would like to schedule a call to discuss your needs in more detail. Our marketing specialist would be happy to provide a customized solution for your business.\n\nPlease let us know what times work best for you this week.\n\nBest regards,\nThe LeadFlow Team"
   },
   {
     id: '2',
@@ -48,11 +48,11 @@ const mockEmails: Email[] = [
     from: 'sales@leadflow.com',
     to: 'user@example.com',
     date: '1 day ago',
-    preview: 'Based on your recent request, we've prepared a custom quote for your project needs...',
+    preview: "Based on your recent request, we've prepared a custom quote for your project needs...",
     read: true,
     important: true,
     category: 'inbox',
-    fullMessage: 'Hello,\n\nBased on your recent request, we've prepared a custom quote for your project needs. The quote includes all the services you mentioned, with competitive pricing and flexible payment options.\n\nPlease find the attached document with detailed pricing information. If you have any questions or would like to make adjustments, don't hesitate to contact us.\n\nRegards,\nSales Team, LeadFlow'
+    fullMessage: "Hello,\n\nBased on your recent request, we've prepared a custom quote for your project needs. The quote includes all the services you mentioned, with competitive pricing and flexible payment options.\n\nPlease find the attached document with detailed pricing information. If you have any questions or would like to make adjustments, don't hesitate to contact us.\n\nRegards,\nSales Team, LeadFlow"
   },
   {
     id: '3',
@@ -60,11 +60,11 @@ const mockEmails: Email[] = [
     from: 'user@example.com',
     to: 'info@leadflow.com',
     date: '3 days ago',
-    preview: 'I'm interested in your web development services and would like to know more about...',
+    preview: "I'm interested in your web development services and would like to know more about...",
     read: true,
     important: false,
     category: 'sent',
-    fullMessage: 'Hello LeadFlow Team,\n\nI'm interested in your web development services and would like to know more about your process and pricing. I need a new e-commerce website for my small business that includes product listings, secure checkout, and inventory management.\n\nCould you provide some information about your experience with similar projects and an estimated timeline?\n\nThank you,\n[Your Name]'
+    fullMessage: "Hello LeadFlow Team,\n\nI'm interested in your web development services and would like to know more about your process and pricing. I need a new e-commerce website for my small business that includes product listings, secure checkout, and inventory management.\n\nCould you provide some information about your experience with similar projects and an estimated timeline?\n\nThank you,\n[Your Name]"
   },
   {
     id: '4',
@@ -72,11 +72,11 @@ const mockEmails: Email[] = [
     from: 'support@leadflow.com',
     to: 'user@example.com',
     date: '1 week ago',
-    preview: 'We noticed you haven't responded to our previous email about your inquiry...',
+    preview: "We noticed you haven't responded to our previous email about your inquiry...",
     read: true,
     important: false,
     category: 'archived',
-    fullMessage: 'Dear Valued Customer,\n\nWe noticed you haven't responded to our previous email about your inquiry regarding our services. We want to ensure you have all the information you need to make a decision.\n\nIf you're still interested, please let us know, and we'll be happy to assist you further. If your needs have changed, we understand completely.\n\nThank you for considering LeadFlow.\n\nBest regards,\nCustomer Support Team'
+    fullMessage: "Dear Valued Customer,\n\nWe noticed you haven't responded to our previous email about your inquiry regarding our services. We want to ensure you have all the information you need to make a decision.\n\nIf you're still interested, please let us know, and we'll be happy to assist you further. If your needs have changed, we understand completely.\n\nThank you for considering LeadFlow.\n\nBest regards,\nCustomer Support Team"
   }
 ];
 
