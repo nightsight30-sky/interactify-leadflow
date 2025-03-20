@@ -30,6 +30,15 @@ const leadSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  message: {
+    type: String
+  },
+  requestType: {
+    type: String
+  },
+  lastActivity: {
+    type: String
+  },
   interactions: [{
     message: String,
     date: {
@@ -37,6 +46,13 @@ const leadSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+  isGuest: {
+    type: Boolean,
+    default: true
+  },
+  analysis: {
+    type: String
+  },
   createdAt: {
     type: Date,
     default: Date.now

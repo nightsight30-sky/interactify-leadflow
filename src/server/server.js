@@ -26,27 +26,4 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
-// For development with Vite proxy
-if (process.env.NODE_ENV === 'development') {
-  const { createServer } = require('vite');
-  
-  async function startViteDevServer() {
-    const vite = await createServer({
-      server: {
-        proxy: {
-          '/api': {
-            target: `http://localhost:${PORT}`,
-            changeOrigin: true,
-          },
-        },
-      },
-    });
-    
-    await vite.listen();
-    console.log(`Vite dev server started at ${vite.config.server.https ? 'https' : 'http'}://localhost:${vite.config.server.port}`);
-  }
-  
-  startViteDevServer().catch(console.error);
-}
-
 module.exports = app;

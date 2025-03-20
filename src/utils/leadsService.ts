@@ -8,6 +8,7 @@ export type LeadSource = 'website' | 'referral' | 'social' | 'email' | 'other';
 
 export interface Lead {
   _id?: string;
+  id?: string; // Frontend uses id rather than _id
   name: string;
   email: string;
   phone?: string;
@@ -15,10 +16,15 @@ export interface Lead {
   status: LeadStatus;
   source: LeadSource;
   score: number;
+  message?: string; // Message content
+  requestType?: string; // Type of request
+  lastActivity?: string; // Last activity timestamp or description
   interactions?: {
     message: string;
     date: Date;
   }[];
+  isGuest?: boolean; // Whether the lead is a guest or registered user
+  analysis?: string; // AI analysis of the lead
   createdAt?: Date;
 }
 
@@ -27,9 +33,57 @@ export const leadsService = {
   async getLeads(): Promise<Lead[]> {
     try {
       const response = await axios.get(API_URL);
-      return response.data;
+      // Map backend _id to id for frontend compatibility
+      return response.data.map((lead: any) => ({
+        ...lead,
+        id: lead._id
+      }));
     } catch (error) {
       console.error('Error fetching leads:', error);
+      return [];
+    }
+  },
+
+  // Get guest leads
+  async getGuestLeads(): Promise<Lead[]> {
+    try {
+      const response = await axios.get(`${API_URL}/guests`);
+      return response.data.map((lead: any) => ({
+        ...lead,
+        id: lead._id,
+        isGuest: true
+      }));
+    } catch (error) {
+      console.error('Error fetching guest leads:', error);
+      return [];
+    }
+  },
+
+  // Get registered user leads
+  async getRegisteredUserLeads(): Promise<Lead[]> {
+    try {
+      const response = await axios.get(`${API_URL}/registered`);
+      return response.data.map((lead: any) => ({
+        ...lead,
+        id: lead._id,
+        isGuest: false
+      }));
+    } catch (error) {
+      console.error('Error fetching registered user leads:', error);
+      return [];
+    }
+  },
+
+  // Get user leads (for user dashboard)
+  async getUserLeads(userId: string): Promise<Lead[]> {
+    try {
+      const response = await axios.get(`${API_URL}/user/${userId}`);
+      return response.data.map((lead: any) => ({
+        ...lead,
+        id: lead._id
+      }));
+    } catch (error) {
+      console.error(`Error fetching leads for user ${userId}:`, error);
       return [];
     }
   },
@@ -38,7 +92,10 @@ export const leadsService = {
   async getLead(leadId: string): Promise<Lead | null> {
     try {
       const response = await axios.get(`${API_URL}/${leadId}`);
-      return response.data;
+      return {
+        ...response.data,
+        id: response.data._id
+      };
     } catch (error) {
       console.error(`Error fetching lead ${leadId}:`, error);
       return null;
@@ -46,21 +103,32 @@ export const leadsService = {
   },
 
   // Create a new lead
-  async createLead(lead: Omit<Lead, '_id'>): Promise<Lead | null> {
+  async createLead(lead: Omit<Lead, '_id' | 'id'>): Promise<Lead | null> {
     try {
       const response = await axios.post(API_URL, lead);
-      return response.data;
+      return {
+        ...response.data,
+        id: response.data._id
+      };
     } catch (error) {
       console.error('Error creating lead:', error);
       return null;
     }
   },
 
+  // Add a new lead (alias for createLead for backward compatibility)
+  async addLead(lead: Omit<Lead, '_id' | 'id'>): Promise<Lead | null> {
+    return this.createLead(lead);
+  },
+
   // Update a lead
   async updateLead(leadId: string, lead: Partial<Lead>): Promise<Lead | null> {
     try {
       const response = await axios.patch(`${API_URL}/${leadId}`, lead);
-      return response.data;
+      return {
+        ...response.data,
+        id: response.data._id
+      };
     } catch (error) {
       console.error(`Error updating lead ${leadId}:`, error);
       return null;
@@ -71,7 +139,10 @@ export const leadsService = {
   async updateLeadStatus(leadId: string, status: LeadStatus): Promise<Lead | null> {
     try {
       const response = await axios.patch(`${API_URL}/${leadId}/status`, { status });
-      return response.data;
+      return {
+        ...response.data,
+        id: response.data._id
+      };
     } catch (error) {
       console.error(`Error updating status for lead ${leadId}:`, error);
       return null;
@@ -82,7 +153,10 @@ export const leadsService = {
   async addInteraction(leadId: string, message: string): Promise<Lead | null> {
     try {
       const response = await axios.post(`${API_URL}/${leadId}/interactions`, { message });
-      return response.data;
+      return {
+        ...response.data,
+        id: response.data._id
+      };
     } catch (error) {
       console.error(`Error adding interaction to lead ${leadId}:`, error);
       return null;
