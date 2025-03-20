@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,8 +66,8 @@ const UserMessages = () => {
   useEffect(() => {
     const filtered = userLeads.filter(lead => {
       return lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             lead.requestType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             lead.message.toLowerCase().includes(searchQuery.toLowerCase());
+             (lead.requestType && lead.requestType.toLowerCase().includes(searchQuery.toLowerCase())) ||
+             (lead.message && lead.message.toLowerCase().includes(searchQuery.toLowerCase()));
     });
     setFilteredLeads(filtered);
   }, [userLeads, searchQuery]);
@@ -79,7 +80,7 @@ const UserMessages = () => {
     
     setIsSending(true);
     try {
-      await leadsService.addInteraction(selectedLead.id, reply);
+      await leadsService.addInteraction(selectedLead.id as string, reply);
       fetchLeads(userEmail);
       setReply('');
       toast.success('Reply sent successfully');
@@ -252,20 +253,20 @@ const UserMessages = () => {
                       <div>
                         {filteredLeads.map((lead) => (
                           <div 
-                            key={lead.id} 
+                            key={lead.id as string} 
                             className={`p-4 border-b cursor-pointer hover:bg-gray-50 ${selectedLead?.id === lead.id ? 'bg-gray-100' : ''}`}
                             onClick={() => setSelectedLead(lead)}
                           >
                             <div className="flex justify-between mb-1">
-                              <div className="font-medium">{lead.requestType}</div>
+                              <div className="font-medium">{lead.requestType || 'General Inquiry'}</div>
                               <Badge className={getStatusColor(lead.status)}>
                                 {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
                               </Badge>
                             </div>
-                            <div className="text-sm text-gray-500 truncate mb-2">{lead.message}</div>
+                            <div className="text-sm text-gray-500 truncate mb-2">{lead.message || 'No message'}</div>
                             <div className="flex items-center text-xs text-gray-400">
                               <Clock size={12} className="mr-1" />
-                              {lead.lastActivity}
+                              {lead.lastActivity || 'Unknown'}
                             </div>
                           </div>
                         ))}
@@ -292,7 +293,7 @@ const UserMessages = () => {
                     <CardHeader className="border-b">
                       <div className="flex justify-between">
                         <div>
-                          <CardTitle>{selectedLead.requestType}</CardTitle>
+                          <CardTitle>{selectedLead.requestType || 'General Inquiry'}</CardTitle>
                           <div className="flex items-center mt-1 space-x-2">
                             <Badge className={getStatusColor(selectedLead.status)}>
                               {selectedLead.status.charAt(0).toUpperCase() + selectedLead.status.slice(1)}
@@ -368,5 +369,22 @@ const UserMessages = () => {
                   <div className="flex flex-col items-center justify-center h-full p-6">
                     <MessageSquare className="h-16 w-16 text-gray-300 mb-4" />
                     <h3 className="text-lg font-medium mb-2">No Message Selected</h3>
-                   
+                    <p className="text-gray-500 text-center mb-6">Select a message from the list to view details</p>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => navigate('/user-dashboard')}
+                    >
+                      Create New Request
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+};
 
+export default UserMessages;
