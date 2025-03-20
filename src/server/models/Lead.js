@@ -39,7 +39,13 @@ const leadSchema = new mongoose.Schema({
   lastActivity: {
     type: String
   },
-  interactions: [{
+  // Store the interactions count separately from the actual interactions data
+  interactions: {
+    type: Number,
+    default: 0
+  },
+  // Store the actual interaction data
+  interactionsData: [{
     message: String,
     date: {
       type: Date,

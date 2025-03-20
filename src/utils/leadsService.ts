@@ -19,7 +19,8 @@ export interface Lead {
   message?: string; // Message content
   requestType?: string; // Type of request
   lastActivity?: string; // Last activity timestamp or description
-  interactions?: {
+  interactions: number; // Changed from array to number for display purposes
+  interactionsData?: { // Detailed interaction data
     message: string;
     date: Date;
   }[];
@@ -116,9 +117,15 @@ export const leadsService = {
     }
   },
 
-  // Add a new lead (alias for createLead for backward compatibility)
-  async addLead(lead: Omit<Lead, '_id' | 'id'>): Promise<Lead | null> {
-    return this.createLead(lead);
+  // Add a new lead (alias for createLead with isGuest parameter support)
+  async addLead(lead: Omit<Lead, '_id' | 'id'>, isGuest: boolean = true): Promise<Lead | null> {
+    try {
+      const leadWithGuestFlag = { ...lead, isGuest };
+      return this.createLead(leadWithGuestFlag);
+    } catch (error) {
+      console.error('Error adding lead:', error);
+      return null;
+    }
   },
 
   // Update a lead

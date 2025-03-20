@@ -23,7 +23,7 @@ const MessageDetail = ({ lead, onInteractionComplete }: MessageDetailProps) => {
 
     setIsSending(true);
     try {
-      await leadsService.addInteraction(lead.id, response);
+      await leadsService.addInteraction(lead.id || '', response);
       setResponse('');
       onInteractionComplete();
       toast.success('Response sent successfully');
@@ -80,7 +80,7 @@ const MessageDetail = ({ lead, onInteractionComplete }: MessageDetailProps) => {
                   </span>
                   <span className="flex items-center text-xs text-gray-500">
                     <Clock size={12} className="mr-1" />
-                    {lead.lastActivity}
+                    {lead.lastActivity || 'No activity'}
                   </span>
                 </div>
               </div>
@@ -88,7 +88,7 @@ const MessageDetail = ({ lead, onInteractionComplete }: MessageDetailProps) => {
             <div className="flex items-center">
               <span className="flex items-center px-2 py-1 bg-primary/10 rounded-md text-xs text-primary">
                 <Tag size={12} className="mr-1" />
-                {lead.requestType}
+                {lead.requestType || 'General Inquiry'}
               </span>
             </div>
           </div>
@@ -98,14 +98,14 @@ const MessageDetail = ({ lead, onInteractionComplete }: MessageDetailProps) => {
             <div className="bg-gray-100 p-4 rounded-lg">
               <div className="flex justify-between mb-2">
                 <span className="text-xs text-gray-500">Original Message</span>
-                <span className="text-xs text-gray-500">{lead.lastActivity}</span>
+                <span className="text-xs text-gray-500">{lead.lastActivity || 'Unknown'}</span>
               </div>
-              <p className="text-gray-800 whitespace-pre-wrap">{lead.message}</p>
+              <p className="text-gray-800 whitespace-pre-wrap">{lead.message || 'No message content'}</p>
             </div>
             
             <LeadScoreAnalysis lead={lead} />
             
-            {lead.interactions > 1 && (
+            {typeof lead.interactions === 'number' && lead.interactions > 1 && (
               <div>
                 <h3 className="text-sm font-medium mb-2">Interaction History</h3>
                 <div className="text-sm text-gray-500">

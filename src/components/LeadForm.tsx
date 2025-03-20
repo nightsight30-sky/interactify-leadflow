@@ -43,8 +43,11 @@ const LeadForm = () => {
         email: data.email,
         requestType: data.requestType,
         message: data.message,
-        status: 'new'
-      }, true); // explicitly passing true to mark as a guest lead
+        status: 'new',
+        source: 'website',
+        score: 0,
+        interactions: 0
+      });
       
       form.reset();
       toast.success("Your request has been submitted!");
