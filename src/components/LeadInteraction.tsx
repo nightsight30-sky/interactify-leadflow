@@ -65,9 +65,33 @@ const LeadInteraction = ({
         
         console.log('Sending email:', emailData);
         
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        toast.success(`Email sent to ${recipientEmail}`);
+        // Simulate API call to email service
+        try {
+          // In a real implementation, this would be a fetch call to your email API
+          // Example: await fetch('/api/send-email', { method: 'POST', body: JSON.stringify(emailData) })
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Store email in localStorage for demonstration
+          const storedEmails = JSON.parse(localStorage.getItem('sentEmails') || '[]');
+          storedEmails.push({
+            id: Date.now().toString(),
+            to: emailData.to,
+            from: emailData.from,
+            subject: emailData.subject,
+            message: emailData.message,
+            cc: emailData.cc,
+            bcc: emailData.bcc,
+            date: new Date().toISOString(),
+            read: false
+          });
+          localStorage.setItem('sentEmails', JSON.stringify(storedEmails));
+          
+          toast.success(`Email sent to ${recipientEmail}`);
+        } catch (error) {
+          console.error('Email sending error:', error);
+          toast.error('Failed to send email. Please try again.');
+          throw error; // Re-throw to be caught by outer catch
+        }
       }
       
       onInteractionComplete();
