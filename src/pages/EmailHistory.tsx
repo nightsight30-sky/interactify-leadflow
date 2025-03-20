@@ -131,7 +131,7 @@ const EmailHistory = () => {
 
   const handleArchive = (emailId: string) => {
     const updatedEmails = emails.map(email => 
-      email.id === emailId ? { ...email, category: 'archived' } : email
+      email.id === emailId ? { ...email, category: 'archived' as const } : email
     );
     setEmails(updatedEmails);
     setSelectedEmail(null);
@@ -140,7 +140,7 @@ const EmailHistory = () => {
 
   const handleDelete = (emailId: string) => {
     const updatedEmails = emails.map(email => 
-      email.id === emailId ? { ...email, category: 'trash' } : email
+      email.id === emailId ? { ...email, category: 'trash' as const } : email
     );
     setEmails(updatedEmails);
     setSelectedEmail(null);
