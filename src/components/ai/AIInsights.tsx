@@ -131,14 +131,20 @@ const AIInsights = () => {
   
   const runFullAnalysis = () => {
     setIsLoading(true);
-    toast.promise(
-      new Promise(resolve => setTimeout(resolve, 2000)),
-      {
-        loading: 'Running comprehensive AI analysis...',
-        success: 'Full analysis complete. New insights generated.',
-        error: 'Analysis failed. Please try again.',
-      }
-    ).then(() => setIsLoading(false));
+    // Create a promise to handle the timeout properly
+    new Promise<void>((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, 2000);
+    })
+    .then(() => {
+      setIsLoading(false);
+      toast.success('Full analysis complete. New insights generated.');
+    })
+    .catch(() => {
+      setIsLoading(false);
+      toast.error('Analysis failed. Please try again.');
+    });
   };
   
   const filteredInsights = insights.filter(insight => 
