@@ -1,7 +1,7 @@
-
 import axios from 'axios';
 
 const API_URL = '/api/leads';
+const ADMIN_API_URL = '/api/admin';
 
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
 export type LeadSource = 'website' | 'referral' | 'social' | 'email' | 'other';
@@ -29,6 +29,46 @@ export interface Lead {
   createdAt?: Date;
 }
 
+export interface AdminStats {
+  totalLeads: number;
+  newLeads: number;
+  contactedLeads: number;
+  qualifiedLeads: number;
+  convertedLeads: number;
+  lostLeads: number;
+}
+
+export interface TeamMember {
+  id: number;
+  name: string;
+  role: string;
+  email: string;
+  leads: number;
+}
+
+export interface CalendarEvent {
+  id: number;
+  title: string;
+  date: string;
+  type: string;
+  leadId: string;
+}
+
+// Helper function for error handling
+const handleApiError = (error: any, context: string): never => {
+  let errorMessage = `Error ${context}`;
+  
+  if (axios.isAxiosError(error)) {
+    console.error(`API Error (${context}):`, error.response?.data || error.message);
+    errorMessage = error.response?.data?.message || error.message;
+  } else {
+    console.error(`Non-Axios Error (${context}):`, error);
+    errorMessage = error.message || String(error);
+  }
+  
+  throw new Error(errorMessage);
+};
+
 export const leadsService = {
   // Get all leads
   async getLeads(): Promise<Lead[]> {
@@ -43,6 +83,52 @@ export const leadsService = {
       }));
     } catch (error) {
       console.error('Error fetching leads:', error);
+      return [];
+    }
+  },
+
+  // Get admin dashboard stats
+  async getAdminStats(): Promise<AdminStats> {
+    try {
+      console.log('Fetching admin stats...');
+      const response = await axios.get(`${ADMIN_API_URL}/stats`);
+      console.log('Admin stats fetched successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+      return {
+        totalLeads: 0,
+        newLeads: 0,
+        contactedLeads: 0,
+        qualifiedLeads: 0,
+        convertedLeads: 0,
+        lostLeads: 0
+      };
+    }
+  },
+
+  // Get team members
+  async getTeamMembers(): Promise<TeamMember[]> {
+    try {
+      console.log('Fetching team members...');
+      const response = await axios.get(`${ADMIN_API_URL}/team`);
+      console.log('Team members fetched successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching team members:', error);
+      return [];
+    }
+  },
+
+  // Get calendar events
+  async getCalendarEvents(): Promise<CalendarEvent[]> {
+    try {
+      console.log('Fetching calendar events...');
+      const response = await axios.get(`${ADMIN_API_URL}/calendar`);
+      console.log('Calendar events fetched successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
       return [];
     }
   },
@@ -134,7 +220,11 @@ export const leadsService = {
     try {
       console.log('Adding lead with isGuest =', isGuest, ':', lead);
       const leadWithGuestFlag = { ...lead, isGuest };
-      return this.createLead(leadWithGuestFlag);
+      const result = await this.createLead(leadWithGuestFlag);
+      if (!result) {
+        console.error('Failed to create lead, result is null');
+      }
+      return result;
     } catch (error) {
       console.error('Error adding lead:', error);
       return null;

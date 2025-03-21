@@ -38,8 +38,9 @@ const LeadForm = () => {
     setIsSubmitting(true);
     try {
       console.log('Submitting lead data:', data);
+      
       // By default, leads from the homepage form are considered guest leads
-      const result = await leadsService.addLead({
+      const lead = {
         name: data.name,
         email: data.email,
         requestType: data.requestType,
@@ -47,12 +48,23 @@ const LeadForm = () => {
         status: 'new',
         source: 'website',
         score: 0,
-        interactions: 0
-      });
+        interactions: 0,
+        lastActivity: 'Just now',
+        isGuest: true
+      };
       
-      console.log('Lead submission result:', result);
-      form.reset();
-      toast.success("Your request has been submitted!");
+      console.log('Formatted lead data for submission:', lead);
+      
+      const result = await leadsService.addLead(lead);
+      
+      if (result) {
+        console.log('Lead created successfully:', result);
+        form.reset();
+        toast.success("Your request has been submitted!");
+      } else {
+        console.error('Lead creation returned null');
+        toast.error("There was a problem submitting your request. Please try again.");
+      }
     } catch (error) {
       console.error('Error submitting lead:', error);
       toast.error("There was a problem submitting your request. Please try again.");
