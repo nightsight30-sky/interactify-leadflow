@@ -4,10 +4,7 @@ require('dotenv').config();
 
 const connectDB = async () => {
   try {
-    const uri = process.env.MONGODB_URI?.replace(
-      "<db_password>",
-      process.env.MONGODB_PASSWORD || "1qaz2WSX3edc"
-    );
+    const uri = process.env.MONGODB_URI;
     
     console.log('Attempting to connect to MongoDB with URI:', uri);
     
