@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from 'sonner';
-import { leadsService, LeadStatus } from '@/utils/leadsService';
+import { leadsService, LeadStatus, LeadSource } from '@/utils/leadsService';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
@@ -46,7 +46,7 @@ const LeadForm = () => {
         requestType: data.requestType,
         message: data.message,
         status: 'new' as LeadStatus, // Explicitly cast to LeadStatus type
-        source: 'website',
+        source: 'website' as LeadSource, // Explicitly cast to LeadSource type
         score: 0,
         interactions: 0,
         lastActivity: 'Just now',
