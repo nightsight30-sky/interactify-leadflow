@@ -37,8 +37,9 @@ const LeadForm = () => {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
+      console.log('Submitting lead data:', data);
       // By default, leads from the homepage form are considered guest leads
-      await leadsService.addLead({
+      const result = await leadsService.addLead({
         name: data.name,
         email: data.email,
         requestType: data.requestType,
@@ -49,6 +50,7 @@ const LeadForm = () => {
         interactions: 0
       });
       
+      console.log('Lead submission result:', result);
       form.reset();
       toast.success("Your request has been submitted!");
     } catch (error) {

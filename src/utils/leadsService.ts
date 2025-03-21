@@ -33,7 +33,9 @@ export const leadsService = {
   // Get all leads
   async getLeads(): Promise<Lead[]> {
     try {
+      console.log('Fetching all leads...');
       const response = await axios.get(API_URL);
+      console.log('Leads fetched successfully:', response.data.length);
       // Map backend _id to id for frontend compatibility
       return response.data.map((lead: any) => ({
         ...lead,
@@ -48,7 +50,9 @@ export const leadsService = {
   // Get guest leads
   async getGuestLeads(): Promise<Lead[]> {
     try {
+      console.log('Fetching guest leads...');
       const response = await axios.get(`${API_URL}/guests`);
+      console.log('Guest leads fetched successfully:', response.data.length);
       return response.data.map((lead: any) => ({
         ...lead,
         id: lead._id,
@@ -63,7 +67,9 @@ export const leadsService = {
   // Get registered user leads
   async getRegisteredUserLeads(): Promise<Lead[]> {
     try {
+      console.log('Fetching registered user leads...');
       const response = await axios.get(`${API_URL}/registered`);
+      console.log('Registered user leads fetched successfully:', response.data.length);
       return response.data.map((lead: any) => ({
         ...lead,
         id: lead._id,
@@ -78,7 +84,9 @@ export const leadsService = {
   // Get user leads (for user dashboard)
   async getUserLeads(userId: string): Promise<Lead[]> {
     try {
+      console.log(`Fetching leads for user ${userId}...`);
       const response = await axios.get(`${API_URL}/user/${userId}`);
+      console.log(`Leads for user ${userId} fetched successfully:`, response.data.length);
       return response.data.map((lead: any) => ({
         ...lead,
         id: lead._id
@@ -92,7 +100,9 @@ export const leadsService = {
   // Get a single lead
   async getLead(leadId: string): Promise<Lead | null> {
     try {
+      console.log(`Fetching lead ${leadId}...`);
       const response = await axios.get(`${API_URL}/${leadId}`);
+      console.log(`Lead ${leadId} fetched successfully`);
       return {
         ...response.data,
         id: response.data._id
@@ -106,7 +116,9 @@ export const leadsService = {
   // Create a new lead
   async createLead(lead: Omit<Lead, '_id' | 'id'>): Promise<Lead | null> {
     try {
+      console.log('Creating new lead:', lead);
       const response = await axios.post(API_URL, lead);
+      console.log('Lead created successfully:', response.data);
       return {
         ...response.data,
         id: response.data._id
@@ -120,6 +132,7 @@ export const leadsService = {
   // Add a new lead (alias for createLead with isGuest parameter support)
   async addLead(lead: Omit<Lead, '_id' | 'id'>, isGuest: boolean = true): Promise<Lead | null> {
     try {
+      console.log('Adding lead with isGuest =', isGuest, ':', lead);
       const leadWithGuestFlag = { ...lead, isGuest };
       return this.createLead(leadWithGuestFlag);
     } catch (error) {
@@ -131,7 +144,9 @@ export const leadsService = {
   // Update a lead
   async updateLead(leadId: string, lead: Partial<Lead>): Promise<Lead | null> {
     try {
+      console.log(`Updating lead ${leadId}...`);
       const response = await axios.patch(`${API_URL}/${leadId}`, lead);
+      console.log(`Lead ${leadId} updated successfully`);
       return {
         ...response.data,
         id: response.data._id
@@ -145,7 +160,9 @@ export const leadsService = {
   // Update lead status
   async updateLeadStatus(leadId: string, status: LeadStatus): Promise<Lead | null> {
     try {
+      console.log(`Updating status for lead ${leadId} to ${status}...`);
       const response = await axios.patch(`${API_URL}/${leadId}/status`, { status });
+      console.log(`Status for lead ${leadId} updated successfully`);
       return {
         ...response.data,
         id: response.data._id
@@ -159,7 +176,9 @@ export const leadsService = {
   // Add an interaction to a lead
   async addInteraction(leadId: string, message: string): Promise<Lead | null> {
     try {
+      console.log(`Adding interaction to lead ${leadId}...`);
       const response = await axios.post(`${API_URL}/${leadId}/interactions`, { message });
+      console.log(`Interaction added to lead ${leadId} successfully`);
       return {
         ...response.data,
         id: response.data._id
@@ -173,7 +192,9 @@ export const leadsService = {
   // Delete a lead
   async deleteLead(leadId: string): Promise<boolean> {
     try {
+      console.log(`Deleting lead ${leadId}...`);
       await axios.delete(`${API_URL}/${leadId}`);
+      console.log(`Lead ${leadId} deleted successfully`);
       return true;
     } catch (error) {
       console.error(`Error deleting lead ${leadId}:`, error);

@@ -9,6 +9,7 @@ router.get('/', async (req, res) => {
     const leads = await Lead.find().sort({ createdAt: -1 });
     res.json(leads);
   } catch (error) {
+    console.error('Error getting leads:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -19,6 +20,7 @@ router.get('/guests', async (req, res) => {
     const leads = await Lead.find({ isGuest: true }).sort({ createdAt: -1 });
     res.json(leads);
   } catch (error) {
+    console.error('Error getting guest leads:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -29,132 +31,159 @@ router.get('/registered', async (req, res) => {
     const leads = await Lead.find({ isGuest: false }).sort({ createdAt: -1 });
     res.json(leads);
   } catch (error) {
+    console.error('Error getting registered leads:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
-// Get leads for a specific user
-router.get('/user/:userId', async (req, res) => {
+// Get leads by user email
+router.get('/user/:email', async (req, res) => {
   try {
-    // In a real app, you'd use the userId to filter leads
-    // For now, we'll just return all leads as an example
-    const leads = await Lead.find().sort({ createdAt: -1 });
+    const email = req.params.email;
+    console.log(`Finding leads for email: ${email}`);
+    const leads = await Lead.find({ email }).sort({ createdAt: -1 });
+    console.log(`Found ${leads.length} leads for user ${email}`);
     res.json(leads);
   } catch (error) {
+    console.error(`Error getting leads for user ${req.params.email}:`, error);
     res.status(500).json({ message: error.message });
   }
 });
 
 // Get a single lead
-router.get('/:id', getLead, (req, res) => {
-  res.json(res.lead);
-});
-
-// Create a lead
-router.post('/', async (req, res) => {
-  const lead = new Lead({
-    name: req.body.name,
-    email: req.body.email,
-    phone: req.body.phone,
-    company: req.body.company,
-    status: req.body.status || 'new',
-    source: req.body.source || 'website',
-    score: req.body.score || Math.floor(Math.random() * 100),
-    message: req.body.message,
-    requestType: req.body.requestType,
-    lastActivity: req.body.lastActivity || 'Just now',
-    isGuest: req.body.isGuest !== undefined ? req.body.isGuest : true,
-    analysis: req.body.analysis
-  });
-
+router.get('/:id', async (req, res) => {
   try {
-    const newLead = await lead.save();
-    res.status(201).json(newLead);
+    const lead = await Lead.findById(req.params.id);
+    if (!lead) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+    res.json(lead);
   } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// Update a lead
-router.patch('/:id', getLead, async (req, res) => {
-  if (req.body.name) res.lead.name = req.body.name;
-  if (req.body.email) res.lead.email = req.body.email;
-  if (req.body.phone) res.lead.phone = req.body.phone;
-  if (req.body.company) res.lead.company = req.body.company;
-  if (req.body.status) res.lead.status = req.body.status;
-  if (req.body.source) res.lead.source = req.body.source;
-  if (req.body.score) res.lead.score = req.body.score;
-  if (req.body.message) res.lead.message = req.body.message;
-  if (req.body.requestType) res.lead.requestType = req.body.requestType;
-  if (req.body.lastActivity) res.lead.lastActivity = req.body.lastActivity;
-  if (req.body.isGuest !== undefined) res.lead.isGuest = req.body.isGuest;
-  if (req.body.analysis) res.lead.analysis = req.body.analysis;
-
-  try {
-    const updatedLead = await res.lead.save();
-    res.json(updatedLead);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// Update lead status
-router.patch('/:id/status', getLead, async (req, res) => {
-  if (req.body.status) {
-    res.lead.status = req.body.status;
-    res.lead.lastActivity = 'Just now';
-  }
-
-  try {
-    const updatedLead = await res.lead.save();
-    res.json(updatedLead);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// Add interaction to a lead
-router.post('/:id/interactions', getLead, async (req, res) => {
-  if (req.body.message) {
-    res.lead.interactions.push({
-      message: req.body.message,
-      date: new Date()
-    });
-    res.lead.lastActivity = 'Just now';
-  }
-
-  try {
-    const updatedLead = await res.lead.save();
-    res.json(updatedLead);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// Delete a lead
-router.delete('/:id', getLead, async (req, res) => {
-  try {
-    await res.lead.remove();
-    res.json({ message: 'Lead deleted' });
-  } catch (error) {
+    console.error(`Error getting lead ${req.params.id}:`, error);
     res.status(500).json({ message: error.message });
   }
 });
 
-// Middleware to get lead by ID
-async function getLead(req, res, next) {
-  let lead;
+// Create a new lead
+router.post('/', async (req, res) => {
   try {
-    lead = await Lead.findById(req.params.id);
-    if (lead == null) {
+    console.log('Creating new lead with data:', req.body);
+    const lead = new Lead({
+      name: req.body.name,
+      email: req.body.email,
+      phone: req.body.phone || '',
+      company: req.body.company || '',
+      status: req.body.status || 'new',
+      source: req.body.source || 'website',
+      score: req.body.score || 0,
+      message: req.body.message || '',
+      requestType: req.body.requestType || '',
+      lastActivity: 'Lead created',
+      interactions: 0,
+      isGuest: req.body.isGuest !== undefined ? req.body.isGuest : true
+    });
+    
+    const newLead = await lead.save();
+    console.log('Lead created successfully:', newLead);
+    res.status(201).json(newLead);
+  } catch (error) {
+    console.error('Error creating lead:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update lead status
+router.patch('/:id/status', async (req, res) => {
+  try {
+    const lead = await Lead.findById(req.params.id);
+    if (!lead) {
       return res.status(404).json({ message: 'Lead not found' });
     }
+    
+    lead.status = req.body.status;
+    lead.lastActivity = `Status updated to ${req.body.status}`;
+    
+    const updatedLead = await lead.save();
+    res.json(updatedLead);
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.error(`Error updating status for lead ${req.params.id}:`, error);
+    res.status(500).json({ message: error.message });
   }
+});
 
-  res.lead = lead;
-  next();
-}
+// Add interaction to lead
+router.post('/:id/interactions', async (req, res) => {
+  try {
+    const lead = await Lead.findById(req.params.id);
+    if (!lead) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+    
+    // Create a new interaction
+    lead.interactionsData.push({
+      message: req.body.message,
+      date: new Date()
+    });
+    
+    // Update the interactions count
+    lead.interactions = lead.interactionsData.length;
+    
+    // Update last activity
+    lead.lastActivity = 'New interaction added';
+    
+    const updatedLead = await lead.save();
+    res.json(updatedLead);
+  } catch (error) {
+    console.error(`Error adding interaction to lead ${req.params.id}:`, error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update lead
+router.patch('/:id', async (req, res) => {
+  try {
+    const lead = await Lead.findById(req.params.id);
+    if (!lead) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+    
+    // Update allowed fields
+    const allowedUpdates = [
+      'name', 'email', 'phone', 'company', 'status', 
+      'source', 'score', 'message', 'requestType', 'analysis'
+    ];
+    
+    allowedUpdates.forEach(update => {
+      if (req.body[update] !== undefined) {
+        lead[update] = req.body[update];
+      }
+    });
+    
+    // Update last activity
+    lead.lastActivity = 'Lead details updated';
+    
+    const updatedLead = await lead.save();
+    res.json(updatedLead);
+  } catch (error) {
+    console.error(`Error updating lead ${req.params.id}:`, error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Delete lead
+router.delete('/:id', async (req, res) => {
+  try {
+    const lead = await Lead.findById(req.params.id);
+    if (!lead) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+    
+    await Lead.deleteOne({ _id: req.params.id });
+    res.json({ message: 'Lead deleted' });
+  } catch (error) {
+    console.error(`Error deleting lead ${req.params.id}:`, error);
+    res.status(500).json({ message: error.message });
+  }
+});
 
 module.exports = router;
