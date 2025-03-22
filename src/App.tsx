@@ -16,9 +16,6 @@ import Learn from "./pages/Learn";
 import NotFound from "./pages/NotFound";
 import EmailHistory from "./pages/EmailHistory";
 import UserMessages from "./pages/UserMessages";
-import EmailCampaign from "./pages/EmailCampaign";
-import AdminCalendar from "./pages/AdminCalendar";
-import AdminTeam from "./pages/AdminTeam";
 
 const queryClient = new QueryClient();
 
@@ -40,9 +37,6 @@ const App = () => (
           <Route path="/learn" element={<Learn />} />
           <Route path="/email-history" element={<EmailHistory />} />
           <Route path="/user-messages" element={<UserMessages />} />
-          <Route path="/email-campaign" element={<EmailCampaign />} />
-          <Route path="/admin-calendar" element={<AdminCalendar />} />
-          <Route path="/admin-team" element={<AdminTeam />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
