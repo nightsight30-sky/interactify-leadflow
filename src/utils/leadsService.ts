@@ -1,5 +1,5 @@
+
 import { toast } from "sonner";
-import { geminiService } from "./geminiService";
 
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
 
@@ -14,7 +14,6 @@ export interface Lead {
   message: string;
   interactions: number;
   isGuest?: boolean; // Property to identify guest vs logged-in user leads
-  analysis?: string; // Added analysis from Gemini
 }
 
 // Initial mock data
@@ -166,23 +165,26 @@ export const leadsService = {
   },
 
   // Add a new lead
-  addLead: async (lead: Omit<Lead, 'id' | 'score' | 'lastActivity' | 'interactions' | 'analysis'>, isGuest: boolean = true): Promise<Lead> => {
+  addLead: async (lead: Omit<Lead, 'id' | 'score' | 'lastActivity' | 'interactions'>, isGuest: boolean = true): Promise<Lead> => {
     await delay(800);
     
     // Generate random ID
     const id = Math.random().toString(36).substring(2, 9);
     
-    // Get AI-generated score from Gemini
-    const geminiAnalysis = await geminiService.analyzeLeadContent(lead.message, lead.requestType);
+    // Calculate an AI score based on message length and requestType
+    let score = Math.floor(Math.random() * 40) + 30; // Base score 30-70
+    if (lead.message.length > 100) score += 15;
+    if (lead.requestType === 'Demo Request') score += 20;
+    if (lead.requestType === 'Product Inquiry') score += 10;
+    score = Math.min(score, 99); // Cap at 99
     
     const newLead: Lead = {
       id,
       ...lead,
-      score: geminiAnalysis.score,
+      score,
       lastActivity: 'Just now',
       interactions: 1,
-      isGuest,
-      analysis: geminiAnalysis.analysis
+      isGuest
     };
     
     leads = [newLead, ...leads];
