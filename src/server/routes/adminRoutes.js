@@ -1,19 +1,19 @@
 
 const express = require('express');
 const router = express.Router();
-const Lead = require('../models/Lead');
+const { store } = require('../db');
 
 // Get admin dashboard stats
 router.get('/stats', async (req, res) => {
   try {
     console.log('Fetching admin dashboard stats...');
     
-    const totalLeads = await Lead.countDocuments();
-    const newLeads = await Lead.countDocuments({ status: 'new' });
-    const contactedLeads = await Lead.countDocuments({ status: 'contacted' });
-    const qualifiedLeads = await Lead.countDocuments({ status: 'qualified' });
-    const convertedLeads = await Lead.countDocuments({ status: 'converted' });
-    const lostLeads = await Lead.countDocuments({ status: 'lost' });
+    const totalLeads = store.leads.length;
+    const newLeads = store.leads.filter(lead => lead.status === 'new').length;
+    const contactedLeads = store.leads.filter(lead => lead.status === 'contacted').length;
+    const qualifiedLeads = store.leads.filter(lead => lead.status === 'qualified').length;
+    const convertedLeads = store.leads.filter(lead => lead.status === 'converted').length;
+    const lostLeads = store.leads.filter(lead => lead.status === 'lost').length;
     
     const stats = {
       totalLeads,
@@ -60,14 +60,14 @@ router.get('/calendar', async (req, res) => {
         title: 'Client Meeting', 
         date: new Date(today.setDate(today.getDate() + 1)).toISOString(),
         type: 'meeting',
-        leadId: '60d21b4667d0d8992e610c85'
+        leadId: '1'
       },
       { 
         id: 2, 
         title: 'Product Demo', 
         date: new Date(today.setDate(today.getDate() + 3)).toISOString(),
         type: 'demo',
-        leadId: '60d21b4667d0d8992e610c86'
+        leadId: '2'
       }
     ];
     

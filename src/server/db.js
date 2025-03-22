@@ -1,32 +1,40 @@
 
-const mongoose = require('mongoose');
-require('dotenv').config();
+// In-memory data store
+const store = {
+  leads: [],
+  emails: [],
+  nextLeadId: 1,
+  nextEmailId: 1
+};
 
+// Function to emulate connecting to a database
 const connectDB = async () => {
   try {
-    const uri = process.env.MONGODB_URI;
-    
-    console.log('Attempting to connect to MongoDB with URI:', uri);
-    
-    // Set strictQuery to false to suppress deprecation warning
-    mongoose.set('strictQuery', false);
-    
-    const conn = await mongoose.connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-    
-    // Test the connection by checking database name
-    console.log(`Connected to database: ${conn.connection.name}`);
-    
-    return conn;
+    console.log('Using in-memory data store instead of MongoDB');
+    return { connection: { host: 'local', name: 'in-memory' } };
   } catch (error) {
-    console.error(`Error connecting to MongoDB: ${error.message}`);
-    console.error('Full error stack:', error);
+    console.error(`Error initializing in-memory data store: ${error.message}`);
     process.exit(1);
   }
 };
 
-module.exports = connectDB;
+// Helper function to get a new ID for leads
+const getNextLeadId = () => {
+  const id = store.nextLeadId.toString();
+  store.nextLeadId++;
+  return id;
+};
+
+// Helper function to get a new ID for emails
+const getNextEmailId = () => {
+  const id = store.nextEmailId.toString();
+  store.nextEmailId++;
+  return id;
+};
+
+module.exports = {
+  connectDB,
+  store,
+  getNextLeadId,
+  getNextEmailId
+};

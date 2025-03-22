@@ -1,17 +1,17 @@
 
 const express = require('express');
 const cors = require('cors');
-const connectDB = require('./db');
+const { connectDB } = require('./db');
 const leadRoutes = require('./routes/leadRoutes');
 const emailRoutes = require('./routes/emailRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 require('dotenv').config();
 
-// Connect to database
+// Connect to local in-memory database
 connectDB().then(() => {
-  console.log('Database connection established successfully');
+  console.log('In-memory data store initialized successfully');
 }).catch(err => {
-  console.error('Failed to establish database connection:', err);
+  console.error('Failed to initialize in-memory data store:', err);
 });
 
 const app = express();
@@ -33,7 +33,7 @@ app.use('/api/emails', emailRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => {
-  res.send('API is running...');
+  res.send('API is running with in-memory storage...');
 });
 
 // Error handling middleware

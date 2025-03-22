@@ -1,12 +1,12 @@
 
 const express = require('express');
 const router = express.Router();
-const Email = require('../models/Email');
+const { store, getNextEmailId } = require('../db');
 
 // Get all emails
 router.get('/', async (req, res) => {
   try {
-    const emails = await Email.find().sort({ date: -1 });
+    const emails = [...store.emails].sort((a, b) => new Date(b.date) - new Date(a.date));
     res.json(emails);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -16,7 +16,9 @@ router.get('/', async (req, res) => {
 // Get emails by lead ID
 router.get('/lead/:leadId', async (req, res) => {
   try {
-    const emails = await Email.find({ leadId: req.params.leadId }).sort({ date: -1 });
+    const emails = store.emails
+      .filter(email => email.leadId === req.params.leadId)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
     res.json(emails);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -30,20 +32,23 @@ router.get('/:id', getEmail, (req, res) => {
 
 // Send an email
 router.post('/', async (req, res) => {
-  const email = new Email({
-    to: req.body.to,
-    from: req.body.from,
-    subject: req.body.subject,
-    message: req.body.message,
-    cc: req.body.cc,
-    bcc: req.body.bcc,
-    leadId: req.body.leadId,
-    read: false
-  });
-
   try {
-    const newEmail = await email.save();
-    res.status(201).json(newEmail);
+    const id = getNextEmailId();
+    const email = {
+      _id: id,
+      to: req.body.to,
+      from: req.body.from,
+      subject: req.body.subject,
+      message: req.body.message,
+      cc: req.body.cc || [],
+      bcc: req.body.bcc || [],
+      leadId: req.body.leadId,
+      read: false,
+      date: new Date()
+    };
+
+    store.emails.push(email);
+    res.status(201).json(email);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -54,8 +59,9 @@ router.patch('/:id/read', getEmail, async (req, res) => {
   res.email.read = true;
 
   try {
-    const updatedEmail = await res.email.save();
-    res.json(updatedEmail);
+    const emailIndex = store.emails.findIndex(e => e._id === req.params.id);
+    store.emails[emailIndex] = res.email;
+    res.json(res.email);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -64,7 +70,8 @@ router.patch('/:id/read', getEmail, async (req, res) => {
 // Delete an email
 router.delete('/:id', getEmail, async (req, res) => {
   try {
-    await res.email.remove();
+    const emailIndex = store.emails.findIndex(e => e._id === req.params.id);
+    store.emails.splice(emailIndex, 1);
     res.json({ message: 'Email deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -75,7 +82,7 @@ router.delete('/:id', getEmail, async (req, res) => {
 async function getEmail(req, res, next) {
   let email;
   try {
-    email = await Email.findById(req.params.id);
+    email = store.emails.find(e => e._id === req.params.id);
     if (email == null) {
       return res.status(404).json({ message: 'Email not found' });
     }

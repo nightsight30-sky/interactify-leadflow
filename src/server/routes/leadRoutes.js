@@ -1,13 +1,13 @@
 
 const express = require('express');
 const router = express.Router();
-const Lead = require('../models/Lead');
+const { store, getNextLeadId } = require('../db');
 
 // Get all leads
 router.get('/', async (req, res) => {
   try {
     console.log('Fetching all leads...');
-    const leads = await Lead.find().sort({ createdAt: -1 });
+    const leads = [...store.leads].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     console.log(`Found ${leads.length} leads`);
     res.json(leads);
   } catch (error) {
@@ -20,7 +20,9 @@ router.get('/', async (req, res) => {
 router.get('/guests', async (req, res) => {
   try {
     console.log('Fetching guest leads...');
-    const leads = await Lead.find({ isGuest: true }).sort({ createdAt: -1 });
+    const leads = store.leads
+      .filter(lead => lead.isGuest === true)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     console.log(`Found ${leads.length} guest leads`);
     res.json(leads);
   } catch (error) {
@@ -33,7 +35,9 @@ router.get('/guests', async (req, res) => {
 router.get('/registered', async (req, res) => {
   try {
     console.log('Fetching registered user leads...');
-    const leads = await Lead.find({ isGuest: false }).sort({ createdAt: -1 });
+    const leads = store.leads
+      .filter(lead => lead.isGuest === false)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     console.log(`Found ${leads.length} registered user leads`);
     res.json(leads);
   } catch (error) {
@@ -49,8 +53,7 @@ router.get('/user/:userId', async (req, res) => {
     console.log(`Fetching leads for user ${userId}...`);
     
     // For demo purposes, returning a subset of leads
-    // In a real app, you would filter by a user ID field
-    const leads = await Lead.find().limit(5).sort({ createdAt: -1 });
+    const leads = store.leads.slice(0, 5).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
     console.log(`Found ${leads.length} leads for user ${userId}`);
     res.json(leads);
@@ -64,7 +67,7 @@ router.get('/user/:userId', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     console.log(`Fetching lead with ID ${req.params.id}...`);
-    const lead = await Lead.findById(req.params.id);
+    const lead = store.leads.find(l => l._id === req.params.id);
     
     if (!lead) {
       console.log(`Lead with ID ${req.params.id} not found`);
@@ -84,20 +87,25 @@ router.post('/', async (req, res) => {
   try {
     console.log('Creating new lead with data:', req.body);
     
+    const _id = getNextLeadId();
+    const createdAt = new Date();
+    
     // Create the lead with default values for any missing fields
-    const newLead = new Lead({
+    const newLead = {
+      _id,
       ...req.body,
       interactions: req.body.interactions || 0,
       score: req.body.score || 0,
       status: req.body.status || 'new',
       source: req.body.source || 'website',
       isGuest: req.body.isGuest !== undefined ? req.body.isGuest : true,
-      lastActivity: 'Just now'
-    });
+      lastActivity: 'Just now',
+      createdAt
+    };
     
-    const savedLead = await newLead.save();
-    console.log('Lead created successfully with ID:', savedLead._id);
-    res.status(201).json(savedLead);
+    store.leads.push(newLead);
+    console.log('Lead created successfully with ID:', _id);
+    res.status(201).json(newLead);
   } catch (error) {
     console.error('Error creating lead:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -108,16 +116,20 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     console.log(`Updating lead with ID ${req.params.id}...`);
-    const updatedLead = await Lead.findByIdAndUpdate(
-      req.params.id,
-      { ...req.body, lastActivity: 'Just now' },
-      { new: true }
-    );
+    const leadIndex = store.leads.findIndex(l => l._id === req.params.id);
     
-    if (!updatedLead) {
+    if (leadIndex === -1) {
       console.log(`Lead with ID ${req.params.id} not found for update`);
       return res.status(404).json({ message: 'Lead not found' });
     }
+    
+    const updatedLead = {
+      ...store.leads[leadIndex],
+      ...req.body,
+      lastActivity: 'Just now'
+    };
+    
+    store.leads[leadIndex] = updatedLead;
     
     console.log(`Lead with ID ${req.params.id} updated successfully`);
     res.json(updatedLead);
@@ -137,19 +149,21 @@ router.patch('/:id/status', async (req, res) => {
       return res.status(400).json({ message: 'Status is required' });
     }
     
-    const updatedLead = await Lead.findByIdAndUpdate(
-      req.params.id,
-      { status, lastActivity: 'Just now' },
-      { new: true }
-    );
+    const leadIndex = store.leads.findIndex(l => l._id === req.params.id);
     
-    if (!updatedLead) {
+    if (leadIndex === -1) {
       console.log(`Lead with ID ${req.params.id} not found for status update`);
       return res.status(404).json({ message: 'Lead not found' });
     }
     
+    store.leads[leadIndex] = {
+      ...store.leads[leadIndex],
+      status,
+      lastActivity: 'Just now'
+    };
+    
     console.log(`Status for lead with ID ${req.params.id} updated successfully to ${status}`);
-    res.json(updatedLead);
+    res.json(store.leads[leadIndex]);
   } catch (error) {
     console.error(`Error updating status for lead with ID ${req.params.id}:`, error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -166,9 +180,9 @@ router.post('/:id/interactions', async (req, res) => {
       return res.status(400).json({ message: 'Message is required' });
     }
     
-    const lead = await Lead.findById(req.params.id);
+    const leadIndex = store.leads.findIndex(l => l._id === req.params.id);
     
-    if (!lead) {
+    if (leadIndex === -1) {
       console.log(`Lead with ID ${req.params.id} not found for adding interaction`);
       return res.status(404).json({ message: 'Lead not found' });
     }
@@ -179,12 +193,15 @@ router.post('/:id/interactions', async (req, res) => {
       date: new Date()
     };
     
-    lead.interactionsData = lead.interactionsData || [];
-    lead.interactionsData.push(interaction);
-    lead.interactions = lead.interactionsData.length;
-    lead.lastActivity = 'Just now';
+    if (!store.leads[leadIndex].interactionsData) {
+      store.leads[leadIndex].interactionsData = [];
+    }
     
-    const updatedLead = await lead.save();
+    store.leads[leadIndex].interactionsData.push(interaction);
+    store.leads[leadIndex].interactions = store.leads[leadIndex].interactionsData.length;
+    store.leads[leadIndex].lastActivity = 'Just now';
+    
+    const updatedLead = store.leads[leadIndex];
     console.log(`Interaction added to lead with ID ${req.params.id} successfully`);
     res.json(updatedLead);
   } catch (error) {
@@ -197,12 +214,15 @@ router.post('/:id/interactions', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     console.log(`Deleting lead with ID ${req.params.id}...`);
-    const deletedLead = await Lead.findByIdAndDelete(req.params.id);
+    const leadIndex = store.leads.findIndex(l => l._id === req.params.id);
     
-    if (!deletedLead) {
+    if (leadIndex === -1) {
       console.log(`Lead with ID ${req.params.id} not found for deletion`);
       return res.status(404).json({ message: 'Lead not found' });
     }
+    
+    const deletedLead = store.leads[leadIndex];
+    store.leads.splice(leadIndex, 1);
     
     console.log(`Lead with ID ${req.params.id} deleted successfully`);
     res.json({ message: 'Lead deleted' });
