@@ -6,7 +6,6 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MessageSquare, Mail } from 'lucide-react';
 import { LeadStatus, leadsService } from '@/utils/leadsService';
-import { emailService } from '@/utils/emailService';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
@@ -50,6 +49,9 @@ const LeadInteraction = ({
       
       // Send email if admin
       if (isAdmin && recipientEmail && subject.trim() && message.trim()) {
+        // In a real-world application, this would connect to an email API
+        // For demonstration purposes, we'll simulate email sending
+        
         // Prepare email data
         const emailData = {
           to: recipientEmail,
@@ -58,11 +60,32 @@ const LeadInteraction = ({
           cc: cc.split(',').map(email => email.trim()).filter(email => email),
           bcc: bcc.split(',').map(email => email.trim()).filter(email => email),
           from: 'support@leadflow.com',
-          leadId: leadId
+          replyTo: 'support@leadflow.com'
         };
         
+        console.log('Sending email:', emailData);
+        
+        // Simulate API call to email service
         try {
-          await emailService.sendEmail(emailData);
+          // In a real implementation, this would be a fetch call to your email API
+          // Example: await fetch('/api/send-email', { method: 'POST', body: JSON.stringify(emailData) })
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Store email in localStorage for demonstration
+          const storedEmails = JSON.parse(localStorage.getItem('sentEmails') || '[]');
+          storedEmails.push({
+            id: Date.now().toString(),
+            to: emailData.to,
+            from: emailData.from,
+            subject: emailData.subject,
+            message: emailData.message,
+            cc: emailData.cc,
+            bcc: emailData.bcc,
+            date: new Date().toISOString(),
+            read: false
+          });
+          localStorage.setItem('sentEmails', JSON.stringify(storedEmails));
+          
           toast.success(`Email sent to ${recipientEmail}`);
         } catch (error) {
           console.error('Email sending error:', error);

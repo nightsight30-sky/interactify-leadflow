@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,7 +14,7 @@ import {
   Bell, LogOut, User, Settings, Mail, Brain, 
   LineChart, PieChart, Calendar, Home, Loader2, Users, UserPlus
 } from 'lucide-react';
-import { leadsService, Lead, LeadStatus, TeamMember, CalendarEvent } from '@/utils/leadsService';
+import { leadsService, Lead, LeadStatus } from '@/utils/leadsService';
 import { toast } from 'sonner';
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 import AIInsights from '@/components/ai/AIInsights';
@@ -32,16 +31,12 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [activeMainTab, setActiveMainTab] = useState('dashboard');
   const [leadTypeFilter, setLeadTypeFilter] = useState('all');
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   
   const fetchLeads = async () => {
     setIsLoading(true);
     try {
       // Get all leads
-      console.log('Fetching all leads from AdminDashboard...');
       const allData = await leadsService.getLeads();
-      console.log('Fetched all leads:', allData);
       setAllLeads(allData);
       
       // Get guest leads
@@ -59,36 +54,9 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchTeamMembers = async () => {
-    try {
-      const data = await leadsService.getTeamMembers();
-      setTeamMembers(data);
-    } catch (error) {
-      console.error('Error fetching team members:', error);
-      toast.error('Failed to load team data');
-    }
-  };
-
-  const fetchCalendarEvents = async () => {
-    try {
-      const data = await leadsService.getCalendarEvents();
-      setCalendarEvents(data);
-    } catch (error) {
-      console.error('Error fetching calendar events:', error);
-      toast.error('Failed to load calendar data');
-    }
-  };
-
   useEffect(() => {
     fetchLeads();
-    
-    // Load team and calendar data for respective tabs
-    if (activeMainTab === 'team') {
-      fetchTeamMembers();
-    } else if (activeMainTab === 'calendar') {
-      fetchCalendarEvents();
-    }
-  }, [activeMainTab]);
+  }, []);
   
   const handleLogout = () => {
     toast.success('Successfully logged out');
@@ -105,10 +73,10 @@ const AdminDashboard = () => {
   // Filter leads based on search query and status filter
   const filteredLeads = getLeadsByType().filter(lead => {
     const matchesSearch = 
-      lead.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      lead.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (lead.message && lead.message.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (lead.requestType && lead.requestType.toLowerCase().includes(searchQuery.toLowerCase()));
+      lead.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.requestType.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
     
@@ -120,11 +88,11 @@ const AdminDashboard = () => {
     if (tab === 'leads') return filteredLeads;
     if (tab === 'highValue') return filteredLeads.filter(lead => lead.score >= 70);
     if (tab === 'recentActivity') return filteredLeads.filter(lead => 
-      lead.lastActivity?.includes('day') || 
-      lead.lastActivity?.includes('hour') || 
-      lead.lastActivity?.includes('minute') || 
-      lead.lastActivity?.includes('Just now') || 
-      lead.lastActivity?.includes('1 week')
+      lead.lastActivity.includes('day') || 
+      lead.lastActivity.includes('hour') || 
+      lead.lastActivity.includes('minute') || 
+      lead.lastActivity.includes('Just now') || 
+      lead.lastActivity.includes('1 week')
     );
     return filteredLeads;
   };
@@ -146,152 +114,7 @@ const AdminDashboard = () => {
   // Handle sidebar menu clicks
   const handleMenuClick = (tab: string) => {
     setActiveMainTab(tab);
-    
-    // Special handling for some tabs to navigate to separate pages
-    if (tab === 'calendar') {
-      navigate('/admin-calendar');
-    } else if (tab === 'team') {
-      navigate('/admin-team');
-    } else if (tab === 'email') {
-      navigate('/email-campaign');
-    }
   };
-
-  // Render Team Members UI
-  const renderTeamMembers = () => (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-1">Team Management</h2>
-        <p className="text-gray-500">Manage your team and their permissions</p>
-      </div>
-      
-      <div className="flex justify-between mb-6">
-        <Button>
-          <UserPlus size={16} className="mr-2" />
-          Add Team Member
-        </Button>
-        <Button variant="outline">
-          <ListFilter size={16} className="mr-2" />
-          Filter
-        </Button>
-      </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Team Members</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {teamMembers.length > 0 ? (
-            <div className="space-y-4">
-              {teamMembers.map(member => (
-                <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                  <div className="flex items-center space-x-4">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                      {member.name.charAt(0)}
-                    </div>
-                    <div>
-                      <h3 className="font-medium">{member.name}</h3>
-                      <p className="text-sm text-gray-500">{member.role}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                      {member.leads} Leads
-                    </span>
-                    <Button variant="ghost" size="sm">
-                      <User size={14} className="mr-2" />
-                      View
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="bg-primary/10 p-6 rounded-full mx-auto w-16 h-16 flex items-center justify-center mb-4">
-                <Users size={24} className="text-primary" />
-              </div>
-              <h3 className="text-lg font-medium mb-2">No Team Members</h3>
-              <p className="text-gray-500 mb-4">Add your first team member to get started</p>
-              <Button>
-                <UserPlus size={16} className="mr-2" />
-                Add Team Member
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  // Render Calendar UI
-  const renderCalendar = () => (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-1">Calendar</h2>
-        <p className="text-gray-500">Schedule and manage appointments with leads</p>
-      </div>
-      
-      <div className="flex justify-between mb-6">
-        <Button>
-          <Calendar size={16} className="mr-2" />
-          New Event
-        </Button>
-        <div className="flex space-x-2">
-          <Button variant="outline" size="sm">Today</Button>
-          <Button variant="outline" size="sm">Week</Button>
-          <Button variant="outline" size="sm">Month</Button>
-        </div>
-      </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Upcoming Events</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {calendarEvents.length > 0 ? (
-            <div className="space-y-4">
-              {calendarEvents.map(event => (
-                <div key={event.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                  <div className="flex items-center space-x-4">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                      <Calendar size={16} />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">{event.title}</h3>
-                      <p className="text-sm text-gray-500">
-                        {new Date(event.date).toLocaleDateString()} at {new Date(event.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                      {event.type}
-                    </span>
-                    <Button variant="ghost" size="sm">
-                      View
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="bg-primary/10 p-6 rounded-full mx-auto w-16 h-16 flex items-center justify-center mb-4">
-                <Calendar size={24} className="text-primary" />
-              </div>
-              <h3 className="text-lg font-medium mb-2">No Events Scheduled</h3>
-              <p className="text-gray-500 mb-4">Schedule your first event with a lead</p>
-              <Button>
-                <Calendar size={16} className="mr-2" />
-                New Event
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
 
   return (
     <SidebarProvider>
@@ -739,21 +562,23 @@ const AdminDashboard = () => {
               </div>
             )}
             
-            {activeMainTab === 'team' && renderTeamMembers()}
-            
-            {activeMainTab === 'calendar' && renderCalendar()}
-            
-            {activeMainTab === 'email' && (
+            {(activeMainTab === 'email' || activeMainTab === 'calendar' || activeMainTab === 'team') && (
               <div className="flex flex-col items-center justify-center py-12">
                 <div className="bg-primary/10 p-6 rounded-full mb-4">
-                  <Mail size={48} className="text-primary" />
+                  {activeMainTab === 'email' && <Mail size={48} className="text-primary" />}
+                  {activeMainTab === 'calendar' && <Calendar size={48} className="text-primary" />}
+                  {activeMainTab === 'team' && <User size={48} className="text-primary" />}
                 </div>
-                <h2 className="text-2xl font-bold mb-2">Email Campaigns</h2>
+                <h2 className="text-2xl font-bold mb-2">
+                  {activeMainTab === 'email' && 'Email Campaigns'}
+                  {activeMainTab === 'calendar' && 'Calendar'}
+                  {activeMainTab === 'team' && 'Team Management'}
+                </h2>
                 <p className="text-gray-500 text-center max-w-md mb-6">
-                  Create, manage, and track email campaigns to engage with your leads effectively.
+                  This feature is coming soon. We're working hard to bring you the best experience possible.
                 </p>
-                <Button onClick={() => navigate('/email-campaign')}>
-                  Go to Email Campaigns
+                <Button onClick={() => setActiveMainTab('dashboard')}>
+                  Return to Dashboard
                 </Button>
               </div>
             )}

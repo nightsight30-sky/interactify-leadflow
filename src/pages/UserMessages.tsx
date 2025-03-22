@@ -66,8 +66,8 @@ const UserMessages = () => {
   useEffect(() => {
     const filtered = userLeads.filter(lead => {
       return lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             (lead.requestType && lead.requestType.toLowerCase().includes(searchQuery.toLowerCase())) ||
-             (lead.message && lead.message.toLowerCase().includes(searchQuery.toLowerCase()));
+             lead.requestType.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             lead.message.toLowerCase().includes(searchQuery.toLowerCase());
     });
     setFilteredLeads(filtered);
   }, [userLeads, searchQuery]);
@@ -80,7 +80,7 @@ const UserMessages = () => {
     
     setIsSending(true);
     try {
-      await leadsService.addInteraction(selectedLead.id as string, reply);
+      await leadsService.addInteraction(selectedLead.id, reply);
       fetchLeads(userEmail);
       setReply('');
       toast.success('Reply sent successfully');
@@ -95,11 +95,13 @@ const UserMessages = () => {
   const handleMenuClick = (tab: string) => {
     setActiveMainTab(tab);
     
+    // Navigate to the appropriate page
     if (tab === 'dashboard') {
       navigate('/user-dashboard');
     } else if (tab === 'email') {
       navigate('/email-history');
     } else if (tab === 'profile' || tab === 'settings') {
+      // For now, stay on user dashboard with profile tab active
       navigate('/user-dashboard');
     }
   };
@@ -253,20 +255,20 @@ const UserMessages = () => {
                       <div>
                         {filteredLeads.map((lead) => (
                           <div 
-                            key={lead.id as string} 
+                            key={lead.id} 
                             className={`p-4 border-b cursor-pointer hover:bg-gray-50 ${selectedLead?.id === lead.id ? 'bg-gray-100' : ''}`}
                             onClick={() => setSelectedLead(lead)}
                           >
                             <div className="flex justify-between mb-1">
-                              <div className="font-medium">{lead.requestType || 'General Inquiry'}</div>
+                              <div className="font-medium">{lead.requestType}</div>
                               <Badge className={getStatusColor(lead.status)}>
                                 {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
                               </Badge>
                             </div>
-                            <div className="text-sm text-gray-500 truncate mb-2">{lead.message || 'No message'}</div>
+                            <div className="text-sm text-gray-500 truncate mb-2">{lead.message}</div>
                             <div className="flex items-center text-xs text-gray-400">
                               <Clock size={12} className="mr-1" />
-                              {lead.lastActivity || 'Unknown'}
+                              {lead.lastActivity}
                             </div>
                           </div>
                         ))}
@@ -288,96 +290,94 @@ const UserMessages = () => {
               </div>
               
               <div className="md:col-span-2">
-                {selectedLead ? (
-                  <div className="h-full flex flex-col">
-                    <CardHeader className="border-b">
-                      <div className="flex justify-between">
-                        <div>
-                          <CardTitle>{selectedLead.requestType || 'General Inquiry'}</CardTitle>
-                          <div className="flex items-center mt-1 space-x-2">
-                            <Badge className={getStatusColor(selectedLead.status)}>
-                              {selectedLead.status.charAt(0).toUpperCase() + selectedLead.status.slice(1)}
-                            </Badge>
-                            <span className="text-xs text-gray-500">
-                              {selectedLead.lastActivity || 'Unknown'}
-                            </span>
-                          </div>
-                        </div>
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {getInitials(userName)}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="flex-1 overflow-auto py-4">
-                      <div className="space-y-6">
-                        <div className="bg-gray-100 p-4 rounded-lg">
-                          <div className="flex justify-between mb-2">
-                            <span className="text-xs text-gray-500">Your Request</span>
-                            <span className="text-xs text-gray-500">{selectedLead.lastActivity || 'Unknown'}</span>
-                          </div>
-                          <p className="text-gray-800 whitespace-pre-wrap">{selectedLead.message || 'No message content'}</p>
-                        </div>
-                        
-                        {typeof selectedLead.interactions === 'number' && selectedLead.interactions > 1 && (
+                <Card className="h-full">
+                  {selectedLead ? (
+                    <div className="h-full flex flex-col">
+                      <CardHeader className="border-b">
+                        <div className="flex justify-between">
                           <div>
-                            <h3 className="text-sm font-medium mb-2">Response History</h3>
-                            <div className="bg-blue-50 p-4 rounded-lg">
-                              <div className="flex justify-between mb-2">
-                                <span className="text-xs text-gray-500">From Admin</span>
-                                <span className="text-xs text-gray-500">Response Time</span>
-                              </div>
-                              <p className="text-gray-800">
-                                Thank you for your request. We have reviewed your inquiry and would be happy to assist you with {selectedLead.requestType?.toLowerCase() || 'your inquiry'}. Could you provide more details about your specific needs?
-                              </p>
+                            <CardTitle>{selectedLead.requestType}</CardTitle>
+                            <div className="flex items-center mt-1 space-x-2">
+                              <Badge className={getStatusColor(selectedLead.status)}>
+                                {selectedLead.status.charAt(0).toUpperCase() + selectedLead.status.slice(1)}
+                              </Badge>
+                              <span className="text-xs text-gray-500">
+                                {selectedLead.lastActivity}
+                              </span>
                             </div>
                           </div>
-                        )}
-                      </div>
-                    </CardContent>
-                    <div className="border-t p-4">
-                      <div className="space-y-4">
-                        <Textarea
-                          placeholder="Type your reply here..."
-                          value={reply}
-                          onChange={(e) => setReply(e.target.value)}
-                          rows={3}
-                        />
-                        <div className="flex justify-end">
-                          <Button 
-                            onClick={handleSendReply}
-                            disabled={!reply.trim() || isSending}
-                          >
-                            {isSending ? (
-                              <>
-                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></div>
-                                Sending...
-                              </>
-                            ) : (
-                              <>
-                                <Send size={14} className="mr-2" />
-                                Send Reply
-                              </>
-                            )}
-                          </Button>
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              {getInitials(userName)}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="flex-1 overflow-auto py-4">
+                        <div className="space-y-6">
+                          <div className="bg-gray-100 p-4 rounded-lg">
+                            <div className="flex justify-between mb-2">
+                              <span className="text-xs text-gray-500">Your Request</span>
+                              <span className="text-xs text-gray-500">{selectedLead.lastActivity}</span>
+                            </div>
+                            <p className="text-gray-800 whitespace-pre-wrap">{selectedLead.message}</p>
+                          </div>
+                          
+                          {selectedLead.interactions > 1 && (
+                            <div>
+                              <h3 className="text-sm font-medium mb-2">Response History</h3>
+                              <div className="bg-blue-50 p-4 rounded-lg">
+                                <div className="flex justify-between mb-2">
+                                  <span className="text-xs text-gray-500">From Admin</span>
+                                  <span className="text-xs text-gray-500">Response Time</span>
+                                </div>
+                                <p className="text-gray-800">
+                                  Thank you for your request. We have reviewed your inquiry and would be happy to assist you with {selectedLead.requestType.toLowerCase()}. Could you provide more details about your specific needs?
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                      <div className="border-t p-4">
+                        <div className="space-y-4">
+                          <Textarea
+                            placeholder="Type your reply here..."
+                            value={reply}
+                            onChange={(e) => setReply(e.target.value)}
+                            rows={3}
+                          />
+                          <div className="flex justify-end">
+                            <Button 
+                              onClick={handleSendReply}
+                              disabled={!reply.trim() || isSending}
+                            >
+                              {isSending ? (
+                                <>
+                                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></div>
+                                  Sending...
+                                </>
+                              ) : (
+                                <>
+                                  <Send size={14} className="mr-2" />
+                                  Send Reply
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full p-6">
-                    <MessageSquare className="h-16 w-16 text-gray-300 mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No Message Selected</h3>
-                    <p className="text-gray-500 text-center mb-6">Select a message from the list to view details</p>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => navigate('/user-dashboard')}
-                    >
-                      Create New Request
-                    </Button>
-                  </div>
-                )}
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full p-6">
+                      <MessageSquare className="h-16 w-16 text-gray-300 mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No Message Selected</h3>
+                      <p className="text-gray-500 text-center">
+                        Select a message from the list to view details and respond
+                      </p>
+                    </div>
+                  )}
+                </Card>
               </div>
             </div>
           </main>

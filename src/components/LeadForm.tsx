@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { toast } from 'sonner';
-import { leadsService, LeadStatus, LeadSource } from '@/utils/leadsService';
+import { leadsService } from '@/utils/leadsService';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
@@ -37,34 +37,17 @@ const LeadForm = () => {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      console.log('Submitting lead data:', data);
-      
       // By default, leads from the homepage form are considered guest leads
-      const lead = {
+      await leadsService.addLead({
         name: data.name,
         email: data.email,
         requestType: data.requestType,
         message: data.message,
-        status: 'new' as LeadStatus, // Explicitly cast to LeadStatus type
-        source: 'website' as LeadSource, // Explicitly cast to LeadSource type
-        score: 0,
-        interactions: 0,
-        lastActivity: 'Just now',
-        isGuest: true
-      };
+        status: 'new'
+      }, true); // explicitly passing true to mark as a guest lead
       
-      console.log('Formatted lead data for submission:', lead);
-      
-      const result = await leadsService.addLead(lead);
-      
-      if (result) {
-        console.log('Lead created successfully:', result);
-        form.reset();
-        toast.success("Your request has been submitted!");
-      } else {
-        console.error('Lead creation returned null');
-        toast.error("There was a problem submitting your request. Please try again.");
-      }
+      form.reset();
+      toast.success("Your request has been submitted!");
     } catch (error) {
       console.error('Error submitting lead:', error);
       toast.error("There was a problem submitting your request. Please try again.");

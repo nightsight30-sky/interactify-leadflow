@@ -1,220 +1,225 @@
+import { toast } from "sonner";
+import { geminiService } from "./geminiService";
 
-import axios from 'axios';
-
-// Define TypeScript types
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
-export type LeadSource = 'website' | 'referral' | 'social' | 'email' | 'phone' | 'other';
 
 export interface Lead {
   id: string;
   name: string;
   email: string;
-  requestType: string;
-  message: string;
-  status: LeadStatus;
-  source: LeadSource;
   score: number;
-  interactions: number;
+  status: LeadStatus;
   lastActivity: string;
-  isGuest?: boolean;
-  createdAt?: Date;
-  analysis?: string;
-  interactionsData?: Array<{ message: string; date: Date }>;
-}
-
-export interface LeadFormData {
-  name: string;
-  email: string;
   requestType: string;
   message: string;
-  status?: LeadStatus;
-  source?: LeadSource;
-  score?: number;
-  interactions?: number;
-  lastActivity?: string;
-  isGuest?: boolean;
+  interactions: number;
+  isGuest?: boolean; // Property to identify guest vs logged-in user leads
+  analysis?: string; // Added analysis from Gemini
 }
 
-// Add TeamMember and CalendarEvent types
-export interface TeamMember {
-  id: number;
-  name: string;
-  role: string;
-  email: string;
-  leads: number;
-}
+// Initial mock data
+const initialLeads: Lead[] = [
+  {
+    id: '1',
+    name: 'John Smith',
+    email: 'john@example.com',
+    score: 85,
+    status: 'qualified',
+    lastActivity: '2 days ago',
+    requestType: 'Product Inquiry',
+    message: 'I\'m interested in your AI lead scoring system. Can you tell me more about the pricing?',
+    interactions: 8,
+    isGuest: false
+  },
+  {
+    id: '2',
+    name: 'Emily Johnson',
+    email: 'emily@example.com',
+    score: 72,
+    status: 'contacted',
+    lastActivity: '5 days ago',
+    requestType: 'Demo Request',
+    message: 'We\'re looking for a lead management system for our sales team of 15 people. Would like to see how your platform works.',
+    interactions: 3,
+    isGuest: true
+  },
+  {
+    id: '3',
+    name: 'Michael Brown',
+    email: 'michael@example.com',
+    score: 45,
+    status: 'new',
+    lastActivity: '1 week ago',
+    requestType: 'Support',
+    message: 'Having some questions about the WhatsApp integration. How does it work with our existing system?',
+    interactions: 1,
+    isGuest: true
+  },
+  {
+    id: '4',
+    name: 'Sarah Wilson',
+    email: 'sarah@example.com',
+    score: 92,
+    status: 'qualified',
+    lastActivity: '1 day ago',
+    requestType: 'Demo Request',
+    message: 'Our marketing team is looking for a new lead management solution that integrates with our CRM. Would like to see a demo.',
+    interactions: 5,
+    isGuest: false
+  },
+  {
+    id: '5',
+    name: 'David Lee',
+    email: 'david@example.com',
+    score: 31,
+    status: 'new',
+    lastActivity: '3 days ago',
+    requestType: 'Pricing',
+    message: 'How much does your basic plan cost? We\'re a small business with about 5 sales reps.',
+    interactions: 2,
+    isGuest: true
+  },
+  {
+    id: '6',
+    name: 'Jessica Chen',
+    email: 'jessica@example.com',
+    score: 78,
+    status: 'contacted',
+    lastActivity: '4 days ago',
+    requestType: 'Product Inquiry',
+    message: 'Does your platform integrate with Salesforce? We need a solution that works with our existing tech stack.',
+    interactions: 4,
+    isGuest: false
+  },
+];
 
-export interface CalendarEvent {
-  id: number;
-  title: string;
-  date: string;
-  type: string;
-  leadId: string;
-}
-
-// Utility function to check if there's an error in the API response
-const checkForError = (response: any) => {
-  if (response && response.error) {
-    console.error('API Error:', response.error);
-    throw new Error(response.error);
+// Use localStorage to persist leads data
+const getStoredLeads = (): Lead[] => {
+  const storedLeads = localStorage.getItem('leadflow_leads');
+  if (storedLeads) {
+    try {
+      return JSON.parse(storedLeads);
+    } catch (error) {
+      console.error('Error parsing stored leads:', error);
+      return [...initialLeads];
+    }
   }
-  return response;
+  return [...initialLeads];
 };
 
-// Define the leads service
+// Save leads to localStorage
+const saveLeads = (leads: Lead[]) => {
+  localStorage.setItem('leadflow_leads', JSON.stringify(leads));
+};
+
+// Initialize with stored or initial data
+let leads = getStoredLeads();
+
+// Simulate API delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// API simulation functions
 export const leadsService = {
   // Get all leads
   getLeads: async (): Promise<Lead[]> => {
-    try {
-      console.log('Fetching all leads...');
-      const response = await axios.get('/api/leads');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching leads:', error);
-      throw error;
-    }
+    await delay(600); // Simulate network delay
+    return [...leads];
+  },
+
+  // Get leads for a specific user by email
+  getUserLeads: async (email: string): Promise<Lead[]> => {
+    await delay(600);
+    // Return leads that match the user's email AND have isGuest set to false
+    return leads.filter(lead => lead.email === email && lead.isGuest === false);
+  },
+
+  // Get guest leads (for admin dashboard)
+  getGuestLeads: async (): Promise<Lead[]> => {
+    await delay(600);
+    return leads.filter(lead => lead.isGuest === true);
+  },
+
+  // Get user leads (for admin dashboard)
+  getRegisteredUserLeads: async (): Promise<Lead[]> => {
+    await delay(600);
+    return leads.filter(lead => lead.isGuest === false);
   },
 
   // Get lead by ID
-  getLead: async (id: string): Promise<Lead> => {
-    try {
-      console.log(`Fetching lead with ID: ${id}`);
-      const response = await axios.get(`/api/leads/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching lead ${id}:`, error);
-      throw error;
-    }
+  getLead: async (id: string): Promise<Lead | undefined> => {
+    await delay(300);
+    return leads.find(lead => lead.id === id);
   },
 
-  // Get leads for a specific user
-  getUserLeads: async (email: string): Promise<Lead[]> => {
-    try {
-      console.log(`Fetching leads for user: ${email}`);
-      const response = await axios.get(`/api/leads/user/${email}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching user leads for ${email}:`, error);
-      throw error;
+  // Update lead status
+  updateLeadStatus: async (id: string, status: LeadStatus): Promise<Lead | undefined> => {
+    await delay(500);
+    const index = leads.findIndex(lead => lead.id === id);
+    if (index !== -1) {
+      leads[index] = { ...leads[index], status };
+      saveLeads(leads);
+      toast.success("Lead status updated successfully");
+      return leads[index];
     }
-  },
-
-  // Get guest leads (leads from non-registered users)
-  getGuestLeads: async (): Promise<Lead[]> => {
-    try {
-      console.log('Fetching guest leads...');
-      const response = await axios.get('/api/leads/guests');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching guest leads:', error);
-      throw error;
-    }
-  },
-
-  // Get registered (non-guest) leads
-  getRegisteredUserLeads: async (): Promise<Lead[]> => {
-    try {
-      console.log('Fetching registered user leads...');
-      const response = await axios.get('/api/leads/registered');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching registered user leads:', error);
-      throw error;
-    }
+    toast.error("Failed to update lead status");
+    return undefined;
   },
 
   // Add a new lead
-  addLead: async (lead: LeadFormData): Promise<Lead> => {
-    try {
-      console.log('Adding new lead:', lead);
-      const response = await axios.post('/api/leads', lead);
-      return response.data;
-    } catch (error) {
-      console.error('Error adding lead:', error);
-      throw error;
-    }
+  addLead: async (lead: Omit<Lead, 'id' | 'score' | 'lastActivity' | 'interactions' | 'analysis'>, isGuest: boolean = true): Promise<Lead> => {
+    await delay(800);
+    
+    // Generate random ID
+    const id = Math.random().toString(36).substring(2, 9);
+    
+    // Get AI-generated score from Gemini
+    const geminiAnalysis = await geminiService.analyzeLeadContent(lead.message, lead.requestType);
+    
+    const newLead: Lead = {
+      id,
+      ...lead,
+      score: geminiAnalysis.score,
+      lastActivity: 'Just now',
+      interactions: 1,
+      isGuest,
+      analysis: geminiAnalysis.analysis
+    };
+    
+    leads = [newLead, ...leads];
+    saveLeads(leads);
+    toast.success("New lead added successfully");
+    return newLead;
   },
 
-  // Update a lead
-  updateLead: async (id: string, leadData: Partial<Lead>): Promise<Lead> => {
-    try {
-      console.log(`Updating lead ${id}:`, leadData);
-      const response = await axios.patch(`/api/leads/${id}`, leadData);
-      return response.data;
-    } catch (error) {
-      console.error(`Error updating lead ${id}:`, error);
-      throw error;
+  // Add interaction to a lead
+  addInteraction: async (id: string, message: string): Promise<Lead | undefined> => {
+    await delay(400);
+    const index = leads.findIndex(lead => lead.id === id);
+    if (index !== -1) {
+      leads[index] = { 
+        ...leads[index], 
+        interactions: leads[index].interactions + 1,
+        lastActivity: 'Just now'
+      };
+      saveLeads(leads);
+      toast.success("Interaction recorded");
+      return leads[index];
     }
-  },
-
-  // Update lead status (shorthand for common operation)
-  updateLeadStatus: async (id: string, status: LeadStatus): Promise<Lead> => {
-    try {
-      console.log(`Updating lead ${id} status to ${status}`);
-      const response = await axios.patch(`/api/leads/${id}/status`, { status });
-      return response.data;
-    } catch (error) {
-      console.error(`Error updating lead status ${id}:`, error);
-      throw error;
-    }
-  },
-
-  // Add an interaction to a lead
-  addInteraction: async (id: string, message: string): Promise<Lead> => {
-    try {
-      console.log(`Adding interaction to lead ${id}`);
-      const response = await axios.post(`/api/leads/${id}/interactions`, { message });
-      return response.data;
-    } catch (error) {
-      console.error(`Error adding interaction to lead ${id}:`, error);
-      throw error;
-    }
+    toast.error("Failed to record interaction");
+    return undefined;
   },
 
   // Delete a lead
-  deleteLead: async (id: string): Promise<void> => {
-    try {
-      console.log(`Deleting lead ${id}`);
-      await axios.delete(`/api/leads/${id}`);
-    } catch (error) {
-      console.error(`Error deleting lead ${id}:`, error);
-      throw error;
+  deleteLead: async (id: string): Promise<boolean> => {
+    await delay(500);
+    const initialLength = leads.length;
+    leads = leads.filter(lead => lead.id !== id);
+    if (leads.length < initialLength) {
+      saveLeads(leads);
+      toast.success("Lead deleted successfully");
+      return true;
     }
-  },
-
-  // Get team members (for admin dashboard)
-  getTeamMembers: async (): Promise<TeamMember[]> => {
-    try {
-      console.log('Fetching team members...');
-      const response = await axios.get('/api/admin/team');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching team members:', error);
-      throw error;
-    }
-  },
-
-  // Get calendar events (for admin dashboard)
-  getCalendarEvents: async (): Promise<CalendarEvent[]> => {
-    try {
-      console.log('Fetching calendar events...');
-      const response = await axios.get('/api/admin/calendar');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching calendar events:', error);
-      throw error;
-    }
-  },
-  
-  // Get stats for admin dashboard
-  getAdminStats: async () => {
-    try {
-      console.log('Fetching admin stats...');
-      const response = await axios.get('/api/admin/stats');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching admin stats:', error);
-      throw error;
-    }
+    toast.error("Failed to delete lead");
+    return false;
   }
 };
