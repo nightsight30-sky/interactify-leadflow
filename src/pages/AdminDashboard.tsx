@@ -12,40 +12,25 @@ import { Link, useNavigate } from 'react-router-dom';
 import { 
   BarChart3, ListFilter, MessageSquare, Search, 
   Bell, LogOut, User, Settings, Mail, Brain, 
-  LineChart, PieChart, Calendar, Home, Loader2, Users, UserPlus
+  LineChart, PieChart, Calendar, Home, Loader2
 } from 'lucide-react';
 import { leadsService, Lead, LeadStatus } from '@/utils/leadsService';
 import { toast } from 'sonner';
-import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
-import AIInsights from '@/components/ai/AIInsights';
-import MessageCenter from '@/components/messages/MessageCenter';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(true);
-  const [allLeads, setAllLeads] = useState<Lead[]>([]);
-  const [guestLeads, setGuestLeads] = useState<Lead[]>([]);
-  const [userLeads, setUserLeads] = useState<Lead[]>([]);
-  const [activeTab, setActiveTab] = useState('all');
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [activeTab, setActiveTab] = useState('leads');
   const [activeMainTab, setActiveMainTab] = useState('dashboard');
-  const [leadTypeFilter, setLeadTypeFilter] = useState('all');
   
   const fetchLeads = async () => {
     setIsLoading(true);
     try {
-      // Get all leads
-      const allData = await leadsService.getLeads();
-      setAllLeads(allData);
-      
-      // Get guest leads
-      const guestData = await leadsService.getGuestLeads();
-      setGuestLeads(guestData);
-      
-      // Get registered user leads
-      const userData = await leadsService.getRegisteredUserLeads();
-      setUserLeads(userData);
+      const data = await leadsService.getLeads();
+      setLeads(data);
     } catch (error) {
       console.error('Error fetching leads:', error);
       toast.error('Failed to load leads');
@@ -63,15 +48,8 @@ const AdminDashboard = () => {
     navigate('/login');
   };
 
-  // Get the appropriate leads based on the lead type filter
-  const getLeadsByType = () => {
-    if (leadTypeFilter === 'guests') return guestLeads;
-    if (leadTypeFilter === 'users') return userLeads;
-    return allLeads;
-  };
-
   // Filter leads based on search query and status filter
-  const filteredLeads = getLeadsByType().filter(lead => {
+  const filteredLeads = leads.filter(lead => {
     const matchesSearch = 
       lead.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -248,23 +226,7 @@ const AdminDashboard = () => {
                 
                 <LeadStats />
                 
-                <div className="mt-8 mb-4">
-                  <Tabs defaultValue="all" value={leadTypeFilter} onValueChange={setLeadTypeFilter}>
-                    <TabsList>
-                      <TabsTrigger value="all">All Leads</TabsTrigger>
-                      <TabsTrigger value="guests">
-                        <UserPlus size={16} className="mr-2" />
-                        Guest Leads
-                      </TabsTrigger>
-                      <TabsTrigger value="users">
-                        <Users size={16} className="mr-2" />
-                        Registered Users
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </div>
-                
-                <div className="mb-8 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                <div className="mt-8 mb-8 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <Input
@@ -307,11 +269,7 @@ const AdminDashboard = () => {
                   <TabsContent value="leads" className="mt-6">
                     <Card>
                       <CardHeader>
-                        <CardTitle>
-                          {leadTypeFilter === 'guests' ? 'Guest Leads' : 
-                           leadTypeFilter === 'users' ? 'Registered User Leads' : 
-                           'Lead Management'}
-                        </CardTitle>
+                        <CardTitle>Lead Management</CardTitle>
                       </CardHeader>
                       <CardContent>
                         {isLoading ? (
@@ -492,36 +450,24 @@ const AdminDashboard = () => {
                         <div className="p-4 border rounded-lg bg-blue-50/50">
                           <h3 className="font-medium mb-2 flex items-center">
                             <MessageSquare size={16} className="text-primary mr-2" />
-                            Lead Type Comparison
+                            Communication Patterns
                           </h3>
                           <p className="text-sm text-gray-600">
-                            Registered user leads have a 35% higher conversion rate than guest leads. 
-                            Consider implementing a streamlined registration process to convert more guests into registered users.
+                            Leads that receive a follow-up within 24 hours show a 40% higher conversion rate. 
+                            5 leads in your pipeline haven't been contacted in over 48 hours.
                           </p>
-                          <div className="flex space-x-2 mt-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => {
-                                setLeadTypeFilter('users');
-                                toast.success('Showing registered user leads');
-                              }}
-                            >
-                              <Users size={14} className="mr-2" />
-                              View User Leads
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => {
-                                setLeadTypeFilter('guests');
-                                toast.success('Showing guest leads');
-                              }}
-                            >
-                              <UserPlus size={14} className="mr-2" />
-                              View Guest Leads
-                            </Button>
-                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mt-2"
+                            onClick={() => {
+                              setActiveTab('leads');
+                              setStatusFilter('new');
+                              toast.success('Filtered to show new leads');
+                            }}
+                          >
+                            View Leads
+                          </Button>
                         </div>
                         <div className="p-4 border rounded-lg bg-blue-50/50">
                           <h3 className="font-medium mb-2 flex items-center">
@@ -540,18 +486,6 @@ const AdminDashboard = () => {
               </>
             )}
             
-            {activeMainTab === 'analytics' && (
-              <AnalyticsDashboard />
-            )}
-            
-            {activeMainTab === 'ai' && (
-              <AIInsights />
-            )}
-            
-            {activeMainTab === 'messages' && (
-              <MessageCenter />
-            )}
-            
             {activeMainTab === 'profile' && (
               <div className="space-y-6">
                 <div>
@@ -562,14 +496,20 @@ const AdminDashboard = () => {
               </div>
             )}
             
-            {(activeMainTab === 'email' || activeMainTab === 'calendar' || activeMainTab === 'team') && (
+            {activeMainTab !== 'dashboard' && activeMainTab !== 'profile' && (
               <div className="flex flex-col items-center justify-center py-12">
                 <div className="bg-primary/10 p-6 rounded-full mb-4">
+                  {activeMainTab === 'analytics' && <BarChart3 size={48} className="text-primary" />}
+                  {activeMainTab === 'ai' && <Brain size={48} className="text-primary" />}
+                  {activeMainTab === 'messages' && <MessageSquare size={48} className="text-primary" />}
                   {activeMainTab === 'email' && <Mail size={48} className="text-primary" />}
                   {activeMainTab === 'calendar' && <Calendar size={48} className="text-primary" />}
                   {activeMainTab === 'team' && <User size={48} className="text-primary" />}
                 </div>
                 <h2 className="text-2xl font-bold mb-2">
+                  {activeMainTab === 'analytics' && 'Analytics Dashboard'}
+                  {activeMainTab === 'ai' && 'AI Insights'}
+                  {activeMainTab === 'messages' && 'Message Center'}
                   {activeMainTab === 'email' && 'Email Campaigns'}
                   {activeMainTab === 'calendar' && 'Calendar'}
                   {activeMainTab === 'team' && 'Team Management'}

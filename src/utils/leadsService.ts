@@ -13,7 +13,6 @@ export interface Lead {
   requestType: string;
   message: string;
   interactions: number;
-  isGuest?: boolean; // Property to identify guest vs logged-in user leads
 }
 
 // Initial mock data
@@ -27,8 +26,7 @@ const initialLeads: Lead[] = [
     lastActivity: '2 days ago',
     requestType: 'Product Inquiry',
     message: 'I\'m interested in your AI lead scoring system. Can you tell me more about the pricing?',
-    interactions: 8,
-    isGuest: false
+    interactions: 8
   },
   {
     id: '2',
@@ -39,8 +37,7 @@ const initialLeads: Lead[] = [
     lastActivity: '5 days ago',
     requestType: 'Demo Request',
     message: 'We\'re looking for a lead management system for our sales team of 15 people. Would like to see how your platform works.',
-    interactions: 3,
-    isGuest: true
+    interactions: 3
   },
   {
     id: '3',
@@ -51,8 +48,7 @@ const initialLeads: Lead[] = [
     lastActivity: '1 week ago',
     requestType: 'Support',
     message: 'Having some questions about the WhatsApp integration. How does it work with our existing system?',
-    interactions: 1,
-    isGuest: true
+    interactions: 1
   },
   {
     id: '4',
@@ -63,8 +59,7 @@ const initialLeads: Lead[] = [
     lastActivity: '1 day ago',
     requestType: 'Demo Request',
     message: 'Our marketing team is looking for a new lead management solution that integrates with our CRM. Would like to see a demo.',
-    interactions: 5,
-    isGuest: false
+    interactions: 5
   },
   {
     id: '5',
@@ -75,8 +70,7 @@ const initialLeads: Lead[] = [
     lastActivity: '3 days ago',
     requestType: 'Pricing',
     message: 'How much does your basic plan cost? We\'re a small business with about 5 sales reps.',
-    interactions: 2,
-    isGuest: true
+    interactions: 2
   },
   {
     id: '6',
@@ -87,8 +81,7 @@ const initialLeads: Lead[] = [
     lastActivity: '4 days ago',
     requestType: 'Product Inquiry',
     message: 'Does your platform integrate with Salesforce? We need a solution that works with our existing tech stack.',
-    interactions: 4,
-    isGuest: false
+    interactions: 4
   },
 ];
 
@@ -125,25 +118,6 @@ export const leadsService = {
     return [...leads];
   },
 
-  // Get leads for a specific user by email
-  getUserLeads: async (email: string): Promise<Lead[]> => {
-    await delay(600);
-    // Return leads that match the user's email AND have isGuest set to false
-    return leads.filter(lead => lead.email === email && lead.isGuest === false);
-  },
-
-  // Get guest leads (for admin dashboard)
-  getGuestLeads: async (): Promise<Lead[]> => {
-    await delay(600);
-    return leads.filter(lead => lead.isGuest === true);
-  },
-
-  // Get user leads (for admin dashboard)
-  getRegisteredUserLeads: async (): Promise<Lead[]> => {
-    await delay(600);
-    return leads.filter(lead => lead.isGuest === false);
-  },
-
   // Get lead by ID
   getLead: async (id: string): Promise<Lead | undefined> => {
     await delay(300);
@@ -165,7 +139,7 @@ export const leadsService = {
   },
 
   // Add a new lead
-  addLead: async (lead: Omit<Lead, 'id' | 'score' | 'lastActivity' | 'interactions'>, isGuest: boolean = true): Promise<Lead> => {
+  addLead: async (lead: Omit<Lead, 'id' | 'score' | 'lastActivity' | 'interactions'>): Promise<Lead> => {
     await delay(800);
     
     // Generate random ID
@@ -183,8 +157,7 @@ export const leadsService = {
       ...lead,
       score,
       lastActivity: 'Just now',
-      interactions: 1,
-      isGuest
+      interactions: 1
     };
     
     leads = [newLead, ...leads];

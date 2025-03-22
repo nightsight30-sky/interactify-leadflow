@@ -57,48 +57,18 @@ const AuthForm = ({ type }: AuthFormProps) => {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      if (type === 'signup') {
-        // Save user data to localStorage on signup
-        localStorage.setItem('userName', formData.name);
-        localStorage.setItem('userEmail', formData.email);
-        localStorage.setItem('userPassword', formData.password);
-        
-        // Success handling
-        toast({
-          title: "Account created",
-          description: "Your account has been created successfully",
-        });
-        
-        // Redirect to login page after signup
-        navigate('/login');
-      } else {
-        // Login process
-        const storedEmail = localStorage.getItem('userEmail');
-        const storedPassword = localStorage.getItem('userPassword');
-        
-        if (storedEmail === formData.email && storedPassword === formData.password) {
-          const userName = localStorage.getItem('userName');
-          
-          // Success handling
-          toast({
-            title: "Logged in successfully",
-            description: "Welcome back to LeadFlow",
-          });
-          
-          // Determine redirect based on role
-          const isAdmin = formData.email.includes('admin');
-          
-          // Pass user data through navigation state
-          navigate(isAdmin ? '/admin-dashboard' : '/user-dashboard', {
-            state: {
-              userName: userName,
-              userEmail: formData.email
-            }
-          });
-        } else {
-          throw new Error('Invalid credentials');
-        }
-      }
+      // Success handling
+      toast({
+        title: type === 'login' ? "Logged in successfully" : "Account created",
+        description: type === 'login' 
+          ? "Welcome back to LeadFlow"
+          : "Your account has been created successfully",
+      });
+      
+      // Redirect based on role (assumed admin for demonstration)
+      const isAdmin = formData.email.includes('admin');
+      navigate(isAdmin ? '/admin-dashboard' : '/user-dashboard');
+      
     } catch (error) {
       toast({
         title: "Authentication failed",
