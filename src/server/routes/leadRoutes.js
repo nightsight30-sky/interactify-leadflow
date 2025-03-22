@@ -6,42 +6,69 @@ const { store, getNextLeadId } = require('../db');
 // Get all leads
 router.get('/', async (req, res) => {
   try {
-    const leads = [...store.leads].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const leads = store.leads;
     res.json(leads);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Get a single lead
+// Get lead by ID
 router.get('/:id', getLead, (req, res) => {
   res.json(res.lead);
+});
+
+// Get registered user leads (non-guest leads)
+router.get('/user/:email', async (req, res) => {
+  try {
+    const userLeads = store.leads.filter(lead => lead.email === req.params.email);
+    res.json(userLeads);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get all registered user leads (non-guest leads)
+router.get('/registered', async (req, res) => {
+  try {
+    const registeredLeads = store.leads.filter(lead => lead.isGuest === false);
+    res.json(registeredLeads);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // Create a new lead
 router.post('/', async (req, res) => {
   try {
     const id = getNextLeadId();
+    
+    // Set default values for optional fields
+    const isGuest = req.body.isGuest !== undefined ? req.body.isGuest : true;
+    const score = req.body.score || 0;
+    const interactions = req.body.interactions || 0;
+    const lastActivity = req.body.lastActivity || 'Just now';
+    
     const lead = {
-      _id: id,
+      id,
       name: req.body.name,
       email: req.body.email,
-      phone: req.body.phone,
-      company: req.body.company,
-      status: req.body.status,
-      source: req.body.source,
-      message: req.body.message,
       requestType: req.body.requestType,
-      score: req.body.score || Math.floor(Math.random() * 100) + 1,
-      interactions: req.body.interactions || 0,
-      lastActivity: new Date().toISOString(),
-      isGuest: req.body.isGuest || false,
-      createdAt: new Date().toISOString()
+      message: req.body.message,
+      status: req.body.status || 'new',
+      source: req.body.source || 'website',
+      score,
+      interactions,
+      lastActivity,
+      isGuest,
+      createdAt: new Date()
     };
 
     store.leads.push(lead);
+    console.log(`Lead created: ${id}`, lead);
     res.status(201).json(lead);
   } catch (error) {
+    console.error('Error creating lead:', error);
     res.status(400).json({ message: error.message });
   }
 });
@@ -50,18 +77,17 @@ router.post('/', async (req, res) => {
 router.patch('/:id', getLead, async (req, res) => {
   if (req.body.name) res.lead.name = req.body.name;
   if (req.body.email) res.lead.email = req.body.email;
-  if (req.body.phone) res.lead.phone = req.body.phone;
-  if (req.body.company) res.lead.company = req.body.company;
   if (req.body.status) res.lead.status = req.body.status;
-  if (req.body.source) res.lead.source = req.body.source;
-  if (req.body.message) res.lead.message = req.body.message;
   if (req.body.requestType) res.lead.requestType = req.body.requestType;
-  if (req.body.score) res.lead.score = req.body.score;
-  if (req.body.interactions) res.lead.interactions = req.body.interactions;
-  res.lead.lastActivity = new Date().toISOString();
+  if (req.body.message) res.lead.message = req.body.message;
+  if (req.body.source) res.lead.source = req.body.source;
+  if (req.body.score !== undefined) res.lead.score = req.body.score;
+  if (req.body.interactions !== undefined) res.lead.interactions = req.body.interactions;
+  if (req.body.lastActivity) res.lead.lastActivity = req.body.lastActivity;
+  if (req.body.isGuest !== undefined) res.lead.isGuest = req.body.isGuest;
 
   try {
-    const leadIndex = store.leads.findIndex(l => l._id === req.params.id);
+    const leadIndex = store.leads.findIndex(l => l.id === req.params.id);
     store.leads[leadIndex] = res.lead;
     res.json(res.lead);
   } catch (error) {
@@ -72,7 +98,7 @@ router.patch('/:id', getLead, async (req, res) => {
 // Delete a lead
 router.delete('/:id', getLead, async (req, res) => {
   try {
-    const leadIndex = store.leads.findIndex(l => l._id === req.params.id);
+    const leadIndex = store.leads.findIndex(l => l.id === req.params.id);
     store.leads.splice(leadIndex, 1);
     res.json({ message: 'Lead deleted' });
   } catch (error) {
@@ -84,7 +110,7 @@ router.delete('/:id', getLead, async (req, res) => {
 async function getLead(req, res, next) {
   let lead;
   try {
-    lead = store.leads.find(l => l._id === req.params.id);
+    lead = store.leads.find(l => l.id === req.params.id);
     if (lead == null) {
       return res.status(404).json({ message: 'Lead not found' });
     }
