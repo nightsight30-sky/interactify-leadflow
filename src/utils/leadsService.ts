@@ -18,6 +18,8 @@ export interface Lead {
   lastActivity: string;
   isGuest?: boolean;
   createdAt?: Date;
+  analysis?: string; // Added missing analysis property
+  interactionsData?: Array<{ message: string; date: Date }>; // Added interactions data
 }
 
 export interface LeadFormData {
@@ -31,6 +33,23 @@ export interface LeadFormData {
   interactions?: number;
   lastActivity?: string;
   isGuest?: boolean;
+}
+
+// Add TeamMember and CalendarEvent types
+export interface TeamMember {
+  id: number;
+  name: string;
+  role: string;
+  email: string;
+  leads: number;
+}
+
+export interface CalendarEvent {
+  id: number;
+  title: string;
+  date: string;
+  type: string;
+  leadId: string;
 }
 
 // Utility function to check if there's an error in the API response
@@ -80,6 +99,18 @@ export const leadsService = {
     }
   },
 
+  // Get guest leads (leads from non-registered users)
+  getGuestLeads: async (): Promise<Lead[]> => {
+    try {
+      console.log('Fetching guest leads...');
+      const response = await axios.get('/api/leads/guests');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching guest leads:', error);
+      throw error;
+    }
+  },
+
   // Get registered (non-guest) leads
   getRegisteredUserLeads: async (): Promise<Lead[]> => {
     try {
@@ -116,6 +147,30 @@ export const leadsService = {
     }
   },
 
+  // Update lead status (shorthand for common operation)
+  updateLeadStatus: async (id: string, status: LeadStatus): Promise<Lead> => {
+    try {
+      console.log(`Updating lead ${id} status to ${status}`);
+      const response = await axios.patch(`/api/leads/${id}/status`, { status });
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating lead status ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Add an interaction to a lead
+  addInteraction: async (id: string, message: string): Promise<Lead> => {
+    try {
+      console.log(`Adding interaction to lead ${id}`);
+      const response = await axios.post(`/api/leads/${id}/interactions`, { message });
+      return response.data;
+    } catch (error) {
+      console.error(`Error adding interaction to lead ${id}:`, error);
+      throw error;
+    }
+  },
+
   // Delete a lead
   deleteLead: async (id: string): Promise<void> => {
     try {
@@ -126,4 +181,28 @@ export const leadsService = {
       throw error;
     }
   },
+
+  // Get team members (for admin dashboard)
+  getTeamMembers: async (): Promise<TeamMember[]> => {
+    try {
+      console.log('Fetching team members...');
+      const response = await axios.get('/api/admin/team');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching team members:', error);
+      throw error;
+    }
+  },
+
+  // Get calendar events (for admin dashboard)
+  getCalendarEvents: async (): Promise<CalendarEvent[]> => {
+    try {
+      console.log('Fetching calendar events...');
+      const response = await axios.get('/api/admin/calendar');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
+      throw error;
+    }
+  }
 };
