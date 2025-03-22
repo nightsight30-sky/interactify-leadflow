@@ -35,6 +35,7 @@ router.get('/stats', async (req, res) => {
 // Get team members
 router.get('/team', async (req, res) => {
   try {
+    console.log('Fetching team members...');
     // Generate team members based on actual leads in the system
     const emailCounts = {};
     
@@ -70,6 +71,7 @@ router.get('/team', async (req, res) => {
       );
     }
     
+    console.log('Team members fetched:', team);
     res.json(team);
   } catch (error) {
     console.error('Error fetching team members:', error);
@@ -80,6 +82,7 @@ router.get('/team', async (req, res) => {
 // Get calendar events
 router.get('/calendar', async (req, res) => {
   try {
+    console.log('Fetching calendar events...');
     // Generate calendar events based on actual leads in the system
     const events = [];
     const today = new Date();
@@ -124,6 +127,7 @@ router.get('/calendar', async (req, res) => {
       );
     }
     
+    console.log('Calendar events fetched:', events);
     res.json(events);
   } catch (error) {
     console.error('Error fetching calendar events:', error);

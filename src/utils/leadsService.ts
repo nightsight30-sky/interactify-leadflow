@@ -18,8 +18,8 @@ export interface Lead {
   lastActivity: string;
   isGuest?: boolean;
   createdAt?: Date;
-  analysis?: string; // Added missing analysis property
-  interactionsData?: Array<{ message: string; date: Date }>; // Added interactions data
+  analysis?: string;
+  interactionsData?: Array<{ message: string; date: Date }>;
 }
 
 export interface LeadFormData {
@@ -202,6 +202,18 @@ export const leadsService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching calendar events:', error);
+      throw error;
+    }
+  },
+  
+  // Get stats for admin dashboard
+  getAdminStats: async () => {
+    try {
+      console.log('Fetching admin stats...');
+      const response = await axios.get('/api/admin/stats');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
       throw error;
     }
   }
