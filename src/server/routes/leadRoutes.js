@@ -4,122 +4,197 @@ const router = express.Router();
 const { store, getNextLeadId } = require('../db');
 
 // Get all leads
-router.get('/', async (req, res) => {
+router.get('/', (req, res) => {
   try {
-    const leads = store.leads;
-    res.json(leads);
+    console.log('Fetching all leads...');
+    res.json(store.leads);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching leads:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
 // Get lead by ID
-router.get('/:id', getLead, (req, res) => {
-  res.json(res.lead);
-});
-
-// Get registered user leads (non-guest leads)
-router.get('/user/:email', async (req, res) => {
+router.get('/:id', (req, res) => {
   try {
-    const userLeads = store.leads.filter(lead => lead.email === req.params.email);
-    res.json(userLeads);
+    const lead = store.leads.find(lead => lead.id === req.params.id);
+    
+    if (!lead) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+    
+    res.json(lead);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching lead:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
-// Get all registered user leads (non-guest leads)
-router.get('/registered', async (req, res) => {
+// Get leads for a specific user by email
+router.get('/user/:email', (req, res) => {
   try {
-    const registeredLeads = store.leads.filter(lead => lead.isGuest === false);
+    const email = req.params.email;
+    console.log(`Fetching leads for user: ${email}`);
+    
+    const userLeads = store.leads.filter(lead => lead.email === email);
+    res.json(userLeads);
+  } catch (error) {
+    console.error('Error fetching user leads:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get guest leads
+router.get('/guests', (req, res) => {
+  try {
+    const guestLeads = store.leads.filter(lead => lead.isGuest === true);
+    res.json(guestLeads);
+  } catch (error) {
+    console.error('Error fetching guest leads:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get registered user leads
+router.get('/registered', (req, res) => {
+  try {
+    const registeredLeads = store.leads.filter(lead => !lead.isGuest);
     res.json(registeredLeads);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error fetching registered leads:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
 // Create a new lead
-router.post('/', async (req, res) => {
+router.post('/', (req, res) => {
   try {
+    console.log('Creating new lead with data:', req.body);
+    
+    // Generate a new ID for the lead
     const id = getNextLeadId();
     
-    // Set default values for optional fields
-    const isGuest = req.body.isGuest !== undefined ? req.body.isGuest : true;
-    const score = req.body.score || 0;
-    const interactions = req.body.interactions || 0;
-    const lastActivity = req.body.lastActivity || 'Just now';
-    
-    const lead = {
+    // Create a new lead with the provided data and current timestamp
+    const newLead = {
       id,
-      name: req.body.name,
-      email: req.body.email,
-      requestType: req.body.requestType,
-      message: req.body.message,
+      ...req.body,
+      createdAt: new Date(),
+      lastActivity: new Date().toISOString(),
+      // Set default values if not provided
       status: req.body.status || 'new',
       source: req.body.source || 'website',
-      score,
-      interactions,
-      lastActivity,
-      isGuest,
-      createdAt: new Date()
+      score: req.body.score || Math.floor(Math.random() * 100),
+      interactions: req.body.interactions || 0,
+      interactionsData: req.body.interactionsData || []
     };
-
-    store.leads.push(lead);
-    console.log(`Lead created: ${id}`, lead);
-    res.status(201).json(lead);
+    
+    // Add the new lead to the store
+    store.leads.push(newLead);
+    
+    console.log('New lead created:', newLead);
+    res.status(201).json(newLead);
   } catch (error) {
     console.error('Error creating lead:', error);
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
 // Update a lead
-router.patch('/:id', getLead, async (req, res) => {
-  if (req.body.name) res.lead.name = req.body.name;
-  if (req.body.email) res.lead.email = req.body.email;
-  if (req.body.status) res.lead.status = req.body.status;
-  if (req.body.requestType) res.lead.requestType = req.body.requestType;
-  if (req.body.message) res.lead.message = req.body.message;
-  if (req.body.source) res.lead.source = req.body.source;
-  if (req.body.score !== undefined) res.lead.score = req.body.score;
-  if (req.body.interactions !== undefined) res.lead.interactions = req.body.interactions;
-  if (req.body.lastActivity) res.lead.lastActivity = req.body.lastActivity;
-  if (req.body.isGuest !== undefined) res.lead.isGuest = req.body.isGuest;
-
+router.patch('/:id', (req, res) => {
   try {
-    const leadIndex = store.leads.findIndex(l => l.id === req.params.id);
-    store.leads[leadIndex] = res.lead;
-    res.json(res.lead);
+    const leadIndex = store.leads.findIndex(lead => lead.id === req.params.id);
+    
+    if (leadIndex === -1) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+    
+    // Update the lead with the provided data
+    const updatedLead = {
+      ...store.leads[leadIndex],
+      ...req.body,
+      lastActivity: new Date().toISOString()
+    };
+    
+    store.leads[leadIndex] = updatedLead;
+    
+    res.json(updatedLead);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error updating lead:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Update lead status
+router.patch('/:id/status', (req, res) => {
+  try {
+    const { status } = req.body;
+    const leadIndex = store.leads.findIndex(lead => lead.id === req.params.id);
+    
+    if (leadIndex === -1) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+    
+    // Update the lead status
+    store.leads[leadIndex].status = status;
+    store.leads[leadIndex].lastActivity = new Date().toISOString();
+    
+    res.json(store.leads[leadIndex]);
+  } catch (error) {
+    console.error('Error updating lead status:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Add an interaction to a lead
+router.post('/:id/interactions', (req, res) => {
+  try {
+    const { message } = req.body;
+    const leadIndex = store.leads.findIndex(lead => lead.id === req.params.id);
+    
+    if (leadIndex === -1) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+    
+    // Increment the interactions count
+    store.leads[leadIndex].interactions += 1;
+    
+    // Update the last activity timestamp
+    store.leads[leadIndex].lastActivity = new Date().toISOString();
+    
+    // Add the new interaction to the interactions data array
+    if (!store.leads[leadIndex].interactionsData) {
+      store.leads[leadIndex].interactionsData = [];
+    }
+    
+    store.leads[leadIndex].interactionsData.push({
+      message,
+      date: new Date()
+    });
+    
+    res.json(store.leads[leadIndex]);
+  } catch (error) {
+    console.error('Error adding interaction:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
 // Delete a lead
-router.delete('/:id', getLead, async (req, res) => {
+router.delete('/:id', (req, res) => {
   try {
-    const leadIndex = store.leads.findIndex(l => l.id === req.params.id);
-    store.leads.splice(leadIndex, 1);
-    res.json({ message: 'Lead deleted' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Middleware to get lead by ID
-async function getLead(req, res, next) {
-  let lead;
-  try {
-    lead = store.leads.find(l => l.id === req.params.id);
-    if (lead == null) {
+    const leadIndex = store.leads.findIndex(lead => lead.id === req.params.id);
+    
+    if (leadIndex === -1) {
       return res.status(404).json({ message: 'Lead not found' });
     }
+    
+    // Remove the lead from the store
+    store.leads.splice(leadIndex, 1);
+    
+    res.json({ message: 'Lead deleted successfully' });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.error('Error deleting lead:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
-
-  res.lead = lead;
-  next();
-}
+});
 
 module.exports = router;

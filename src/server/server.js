@@ -24,10 +24,11 @@ app.use(express.json());
 // Request logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log('Request body:', req.body);
   next();
 });
 
-// Routes
+// Define routes
 app.use('/api/leads', leadRoutes);
 app.use('/api/emails', emailRoutes);
 app.use('/api/admin', adminRoutes);
