@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { PlusCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Define form schema
 const formSchema = z.object({
@@ -25,6 +26,7 @@ interface NewLeadFormProps {
 
 const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -35,9 +37,22 @@ const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
   });
   
   const onSubmit = async (data: FormData) => {
-    onLeadAdded(data);
-    form.reset();
-    setOpen(false);
+    try {
+      setIsSubmitting(true);
+      
+      // Call the parent component's handler
+      onLeadAdded(data);
+      
+      // Reset form and close dialog
+      form.reset();
+      setOpen(false);
+      toast.success("Request submitted successfully");
+    } catch (error) {
+      console.error("Error submitting request:", error);
+      toast.error("Failed to submit request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   return (
@@ -102,7 +117,9 @@ const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
             />
             
             <DialogFooter>
-              <Button type="submit">Submit Request</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Submitting...' : 'Submit Request'}
+              </Button>
             </DialogFooter>
           </form>
         </Form>
