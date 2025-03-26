@@ -1,296 +1,225 @@
-export interface Lead {
-  id: number;
-  name: string;
-  email: string;
-  message: string;
-  requestType: string;
-  status: LeadStatus;
-  score: number;
-  lastActivity: string;
-  type: 'guest' | 'registered';
-  userId?: string;
-  businessId?: string;
-  teamId?: string;
-  assignedTo?: string;
-}
+import { toast } from "sonner";
+import { geminiService } from "./geminiService";
 
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
 
-const mockLeads: Lead[] = [
+export interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  score: number;
+  status: LeadStatus;
+  lastActivity: string;
+  requestType: string;
+  message: string;
+  interactions: number;
+  isGuest?: boolean; // Property to identify guest vs logged-in user leads
+  analysis?: string; // Added analysis from Gemini
+}
+
+// Initial mock data
+const initialLeads: Lead[] = [
   {
-    id: 1,
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    message: 'Interested in learning more about your services.',
-    requestType: 'Information Request',
-    status: 'new',
-    score: 65,
-    lastActivity: '2 days ago',
-    type: 'guest',
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    message: 'Looking for a solution to improve lead conversion rates.',
-    requestType: 'Demo Request',
-    status: 'contacted',
-    score: 80,
-    lastActivity: '1 day ago',
-    type: 'registered',
-    userId: '456',
-  },
-  {
-    id: 3,
-    name: 'Alice Johnson',
-    email: 'alice.johnson@example.com',
-    message: 'Can you provide a case study for the real estate industry?',
-    requestType: 'Case Study Request',
-    status: 'qualified',
-    score: 70,
-    lastActivity: '5 hours ago',
-    type: 'guest',
-  },
-  {
-    id: 4,
-    name: 'Bob Williams',
-    email: 'bob.williams@example.com',
-    message: 'What are the key features of your lead management platform?',
-    requestType: 'Feature Inquiry',
-    status: 'converted',
-    score: 90,
-    lastActivity: 'Just now',
-    type: 'registered',
-    userId: '789',
-  },
-  {
-    id: 5,
-    name: 'Charlie Brown',
-    email: 'charlie.brown@example.com',
-    message: 'Not interested at the moment.',
-    requestType: 'Opt-Out',
-    status: 'lost',
-    score: 20,
-    lastActivity: '1 week ago',
-    type: 'guest',
-  },
-  {
-    id: 6,
-    name: 'Diana Miller',
-    email: 'diana.miller@example.com',
-    message: 'Requesting a follow-up call to discuss pricing options.',
-    requestType: 'Pricing Inquiry',
-    status: 'new',
-    score: 75,
-    lastActivity: '3 days ago',
-    type: 'registered',
-    userId: '101',
-  },
-  {
-    id: 7,
-    name: 'Eva Davis',
-    email: 'eva.davis@example.com',
-    message: 'Seeking a solution tailored to the healthcare industry.',
-    requestType: 'Custom Solution Request',
-    status: 'contacted',
+    id: '1',
+    name: 'John Smith',
+    email: 'john@example.com',
     score: 85,
-    lastActivity: '2 days ago',
-    type: 'guest',
-  },
-  {
-    id: 8,
-    name: 'Frank White',
-    email: 'frank.white@example.com',
-    message: 'Interested in a long-term partnership.',
-    requestType: 'Partnership Inquiry',
     status: 'qualified',
-    score: 78,
-    lastActivity: '1 day ago',
-    type: 'registered',
-    userId: '112',
+    lastActivity: '2 days ago',
+    requestType: 'Product Inquiry',
+    message: 'I\'m interested in your AI lead scoring system. Can you tell me more about the pricing?',
+    interactions: 8,
+    isGuest: false
   },
   {
-    id: 9,
-    name: 'Grace Taylor',
-    email: 'grace.taylor@example.com',
-    message: 'Signed up for the premium plan.',
-    requestType: 'Subscription Confirmation',
-    status: 'converted',
-    score: 95,
-    lastActivity: 'Just now',
-    type: 'guest',
-  },
-  {
-    id: 10,
-    name: 'Henry Moore',
-    email: 'henry.moore@example.com',
-    message: 'Decided to go with a competitor.',
-    requestType: 'Competitor Choice',
-    status: 'lost',
-    score: 15,
-    lastActivity: '2 weeks ago',
-    type: 'registered',
-    userId: '131',
-  },
-  {
-    id: 11,
-    name: 'Ivy Clark',
-    email: 'ivy.clark@example.com',
-    message: 'Requesting a product demonstration.',
-    requestType: 'Demo Request',
-    status: 'new',
+    id: '2',
+    name: 'Emily Johnson',
+    email: 'emily@example.com',
     score: 72,
-    lastActivity: '4 days ago',
-    type: 'guest',
-    businessId: 'b123',
-  },
-  {
-    id: 12,
-    name: 'Jack Green',
-    email: 'jack.green@example.com',
-    message: 'Inquiring about enterprise solutions.',
-    requestType: 'Enterprise Inquiry',
     status: 'contacted',
-    score: 82,
-    lastActivity: '3 days ago',
-    type: 'registered',
-    userId: '141',
-    businessId: 'b123',
+    lastActivity: '5 days ago',
+    requestType: 'Demo Request',
+    message: 'We\'re looking for a lead management system for our sales team of 15 people. Would like to see how your platform works.',
+    interactions: 3,
+    isGuest: true
   },
   {
-    id: 13,
-    name: 'Kelly Hill',
-    email: 'kelly.hill@example.com',
-    message: 'Interested in a custom integration.',
-    requestType: 'Integration Request',
-    status: 'qualified',
-    score: 76,
-    lastActivity: '2 days ago',
-    type: 'guest',
-    teamId: 't123',
+    id: '3',
+    name: 'Michael Brown',
+    email: 'michael@example.com',
+    score: 45,
+    status: 'new',
+    lastActivity: '1 week ago',
+    requestType: 'Support',
+    message: 'Having some questions about the WhatsApp integration. How does it work with our existing system?',
+    interactions: 1,
+    isGuest: true
   },
   {
-    id: 14,
-    name: 'Liam Baker',
-    email: 'liam.baker@example.com',
-    message: 'Signed up for a trial account.',
-    requestType: 'Trial Signup',
-    status: 'converted',
+    id: '4',
+    name: 'Sarah Wilson',
+    email: 'sarah@example.com',
     score: 92,
-    lastActivity: 'Just now',
-    type: 'registered',
-    userId: '151',
-    teamId: 't123',
+    status: 'qualified',
+    lastActivity: '1 day ago',
+    requestType: 'Demo Request',
+    message: 'Our marketing team is looking for a new lead management solution that integrates with our CRM. Would like to see a demo.',
+    interactions: 5,
+    isGuest: false
   },
   {
-    id: 15,
-    name: 'Mia Young',
-    email: 'mia.young@example.com',
-    message: 'No longer interested in our services.',
-    requestType: 'Service Cancellation',
-    status: 'lost',
-    score: 18,
-    lastActivity: '3 weeks ago',
-    type: 'guest',
+    id: '5',
+    name: 'David Lee',
+    email: 'david@example.com',
+    score: 31,
+    status: 'new',
+    lastActivity: '3 days ago',
+    requestType: 'Pricing',
+    message: 'How much does your basic plan cost? We\'re a small business with about 5 sales reps.',
+    interactions: 2,
+    isGuest: true
+  },
+  {
+    id: '6',
+    name: 'Jessica Chen',
+    email: 'jessica@example.com',
+    score: 78,
+    status: 'contacted',
+    lastActivity: '4 days ago',
+    requestType: 'Product Inquiry',
+    message: 'Does your platform integrate with Salesforce? We need a solution that works with our existing tech stack.',
+    interactions: 4,
+    isGuest: false
   },
 ];
 
-// Add these methods to the leadsService object:
+// Use localStorage to persist leads data
+const getStoredLeads = (): Lead[] => {
+  const storedLeads = localStorage.getItem('leadflow_leads');
+  if (storedLeads) {
+    try {
+      return JSON.parse(storedLeads);
+    } catch (error) {
+      console.error('Error parsing stored leads:', error);
+      return [...initialLeads];
+    }
+  }
+  return [...initialLeads];
+};
+
+// Save leads to localStorage
+const saveLeads = (leads: Lead[]) => {
+  localStorage.setItem('leadflow_leads', JSON.stringify(leads));
+};
+
+// Initialize with stored or initial data
+let leads = getStoredLeads();
+
+// Simulate API delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// API simulation functions
 export const leadsService = {
-  getLeads: () => {
-    // Simulate API call with a delay
-    return new Promise<Lead[]>((resolve) => {
-      setTimeout(() => {
-        resolve(mockLeads);
-      }, 800);
-    });
+  // Get all leads
+  getLeads: async (): Promise<Lead[]> => {
+    await delay(600); // Simulate network delay
+    return [...leads];
   },
-  
-  getGuestLeads: () => {
-    // Simulate API call with a delay - filter for guest leads
-    return new Promise<Lead[]>((resolve) => {
-      setTimeout(() => {
-        const guestLeads = mockLeads.filter(lead => lead.type === 'guest');
-        resolve(guestLeads);
-      }, 800);
-    });
+
+  // Get leads for a specific user by email
+  getUserLeads: async (email: string): Promise<Lead[]> => {
+    await delay(600);
+    // Return leads that match the user's email AND have isGuest set to false
+    return leads.filter(lead => lead.email === email && lead.isGuest === false);
   },
-  
-  getRegisteredUserLeads: () => {
-    // Simulate API call with a delay - filter for registered user leads
-    return new Promise<Lead[]>((resolve) => {
-      setTimeout(() => {
-        const userLeads = mockLeads.filter(lead => lead.type === 'registered');
-        resolve(userLeads);
-      }, 800);
-    });
+
+  // Get guest leads (for admin dashboard)
+  getGuestLeads: async (): Promise<Lead[]> => {
+    await delay(600);
+    return leads.filter(lead => lead.isGuest === true);
   },
-  
-  getLeadsForUser: (userId: string = '123') => {
-    // Simulate API call with a delay - filter for specific user
-    return new Promise<Lead[]>((resolve) => {
-      setTimeout(() => {
-        const userLeads = mockLeads.filter(lead => 
-          lead.userId === userId || lead.assignedTo === userId
-        );
-        resolve(userLeads);
-      }, 800);
-    });
+
+  // Get user leads (for admin dashboard)
+  getRegisteredUserLeads: async (): Promise<Lead[]> => {
+    await delay(600);
+    return leads.filter(lead => lead.isGuest === false);
   },
-  
-  getLeadsForBusiness: (businessId: string = 'b123') => {
-    // Simulate API call with a delay - filter for business
-    return new Promise<Lead[]>((resolve) => {
-      setTimeout(() => {
-        const businessLeads = mockLeads.filter(lead => 
-          lead.businessId === businessId
-        );
-        resolve(businessLeads);
-      }, 800);
-    });
+
+  // Get lead by ID
+  getLead: async (id: string): Promise<Lead | undefined> => {
+    await delay(300);
+    return leads.find(lead => lead.id === id);
   },
-  
-  getLeadsForTeam: (teamId: string = 't123') => {
-    // Simulate API call with a delay - filter for team
-    return new Promise<Lead[]>((resolve) => {
-      setTimeout(() => {
-        const teamLeads = mockLeads.filter(lead => 
-          lead.teamId === teamId
-        );
-        resolve(teamLeads);
-      }, 800);
-    });
+
+  // Update lead status
+  updateLeadStatus: async (id: string, status: LeadStatus): Promise<Lead | undefined> => {
+    await delay(500);
+    const index = leads.findIndex(lead => lead.id === id);
+    if (index !== -1) {
+      leads[index] = { ...leads[index], status };
+      saveLeads(leads);
+      toast.success("Lead status updated successfully");
+      return leads[index];
+    }
+    toast.error("Failed to update lead status");
+    return undefined;
   },
-  
-  updateLeadStatus: (leadId: number, status: LeadStatus) => {
-    // Simulate API call with a delay
-    return new Promise<Lead>((resolve) => {
-      setTimeout(() => {
-        const lead = mockLeads.find(l => l.id === leadId);
-        if (lead) {
-          lead.status = status;
-          lead.lastActivity = 'Just now';
-          resolve(lead);
-        } else {
-          throw new Error('Lead not found');
-        }
-      }, 600);
-    });
+
+  // Add a new lead
+  addLead: async (lead: Omit<Lead, 'id' | 'score' | 'lastActivity' | 'interactions' | 'analysis'>, isGuest: boolean = true): Promise<Lead> => {
+    await delay(800);
+    
+    // Generate random ID
+    const id = Math.random().toString(36).substring(2, 9);
+    
+    // Get AI-generated score from Gemini
+    const geminiAnalysis = await geminiService.analyzeLeadContent(lead.message, lead.requestType);
+    
+    const newLead: Lead = {
+      id,
+      ...lead,
+      score: geminiAnalysis.score,
+      lastActivity: 'Just now',
+      interactions: 1,
+      isGuest,
+      analysis: geminiAnalysis.analysis
+    };
+    
+    leads = [newLead, ...leads];
+    saveLeads(leads);
+    toast.success("New lead added successfully");
+    return newLead;
   },
-  
-  assignLead: (leadId: number, assignedTo: string) => {
-    // Simulate API call with a delay
-    return new Promise<Lead>((resolve) => {
-      setTimeout(() => {
-        const lead = mockLeads.find(l => l.id === leadId);
-        if (lead) {
-          lead.assignedTo = assignedTo;
-          lead.lastActivity = 'Just now';
-          resolve(lead);
-        } else {
-          throw new Error('Lead not found');
-        }
-      }, 600);
-    });
+
+  // Add interaction to a lead
+  addInteraction: async (id: string, message: string): Promise<Lead | undefined> => {
+    await delay(400);
+    const index = leads.findIndex(lead => lead.id === id);
+    if (index !== -1) {
+      leads[index] = { 
+        ...leads[index], 
+        interactions: leads[index].interactions + 1,
+        lastActivity: 'Just now'
+      };
+      saveLeads(leads);
+      toast.success("Interaction recorded");
+      return leads[index];
+    }
+    toast.error("Failed to record interaction");
+    return undefined;
+  },
+
+  // Delete a lead
+  deleteLead: async (id: string): Promise<boolean> => {
+    await delay(500);
+    const initialLength = leads.length;
+    leads = leads.filter(lead => lead.id !== id);
+    if (leads.length < initialLength) {
+      saveLeads(leads);
+      toast.success("Lead deleted successfully");
+      return true;
+    }
+    toast.error("Failed to delete lead");
+    return false;
   }
 };
