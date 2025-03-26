@@ -9,16 +9,17 @@ import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger } from '@/comp
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Home, ListFilter, MessageSquare, Search, 
-  Bell, LogOut, User, Settings, Mail
+  Bell, LogOut, User, Settings, Mail, UserPlus
 } from 'lucide-react';
 import NewLeadForm from '@/components/NewLeadForm';
-import { leadsService, Lead } from '@/utils/leadsService';
+import { leadsService, Lead, LeadSource } from '@/utils/leadsService';
 import { toast } from 'sonner';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [leadSourceTab, setLeadSourceTab] = useState<LeadSource | 'all'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
   
@@ -44,7 +45,14 @@ const UserDashboard = () => {
     navigate('/login');
   };
 
-  const filteredLeads = leads.filter(lead => {
+  // First filter by lead source (guest/registered)
+  const leadsBySource = leads.filter(lead => {
+    if (leadSourceTab === 'all') return true;
+    return lead.source === leadSourceTab;
+  });
+
+  // Then filter by search query and tab
+  const filteredLeads = leadsBySource.filter(lead => {
     // Filter by search query
     const matchesQuery = 
       lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -52,7 +60,7 @@ const UserDashboard = () => {
       lead.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.requestType.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Filter by tab
+    // Filter by status tab
     if (activeTab === 'all') return matchesQuery;
     if (activeTab === 'active') return matchesQuery && lead.status !== 'converted' && lead.status !== 'lost';
     if (activeTab === 'completed') return matchesQuery && (lead.status === 'converted' || lead.status === 'lost');
@@ -154,9 +162,25 @@ const UserDashboard = () => {
               </Button>
             </div>
             
+            {/* Lead Source Tabs */}
+            <Tabs defaultValue="all" className="mb-4" value={leadSourceTab} onValueChange={(value) => setLeadSourceTab(value as LeadSource | 'all')}>
+              <TabsList>
+                <TabsTrigger value="all">All Sources</TabsTrigger>
+                <TabsTrigger value="registered">
+                  <User size={14} className="mr-1" />
+                  Your Requests
+                </TabsTrigger>
+                <TabsTrigger value="guest">
+                  <UserPlus size={14} className="mr-1" />
+                  Guest Requests
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            {/* Status Tabs */}
             <Tabs defaultValue="all" className="mb-8" value={activeTab} onValueChange={setActiveTab}>
               <TabsList>
-                <TabsTrigger value="all">All Requests</TabsTrigger>
+                <TabsTrigger value="all">All Statuses</TabsTrigger>
                 <TabsTrigger value="active">Active</TabsTrigger>
                 <TabsTrigger value="completed">Completed</TabsTrigger>
               </TabsList>
@@ -197,7 +221,13 @@ const UserDashboard = () => {
                   </div>
                 ) : (
                   <div className="text-center py-12 border rounded-lg bg-gray-50">
-                    <p className="text-gray-500 mb-4">No requests found</p>
+                    <p className="text-gray-500 mb-4">
+                      {leadSourceTab === 'all' 
+                        ? 'No requests found' 
+                        : leadSourceTab === 'registered' 
+                          ? 'No registered user requests found' 
+                          : 'No guest requests found'}
+                    </p>
                     <NewLeadForm onLeadAdded={fetchLeads} />
                   </div>
                 )}
@@ -239,7 +269,13 @@ const UserDashboard = () => {
                   </div>
                 ) : (
                   <div className="text-center py-12 border rounded-lg bg-gray-50">
-                    <p className="text-gray-500 mb-4">No active requests found</p>
+                    <p className="text-gray-500 mb-4">
+                      {leadSourceTab === 'all' 
+                        ? 'No active requests found' 
+                        : leadSourceTab === 'registered' 
+                          ? 'No active registered user requests found' 
+                          : 'No active guest requests found'}
+                    </p>
                     <NewLeadForm onLeadAdded={fetchLeads} />
                   </div>
                 )}
@@ -281,7 +317,13 @@ const UserDashboard = () => {
                   </div>
                 ) : (
                   <div className="text-center py-12 border rounded-lg bg-gray-50">
-                    <p className="text-gray-500 mb-4">No completed requests found</p>
+                    <p className="text-gray-500 mb-4">
+                      {leadSourceTab === 'all' 
+                        ? 'No completed requests found' 
+                        : leadSourceTab === 'registered' 
+                          ? 'No completed registered user requests found' 
+                          : 'No completed guest requests found'}
+                    </p>
                     <Button variant="outline" onClick={() => setActiveTab('all')}>
                       View all requests
                     </Button>
