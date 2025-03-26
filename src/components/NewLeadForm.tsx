@@ -1,171 +1,111 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { PlusCircle, Loader2 } from 'lucide-react';
-import { leadsService } from '@/utils/leadsService';
-import { toast } from 'sonner';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { PlusCircle } from 'lucide-react';
+
+// Define form schema
+const formSchema = z.object({
+  requestType: z.string().min(1, { message: 'Please select a request type' }),
+  message: z.string().min(10, { message: 'Message must be at least 10 characters' })
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 interface NewLeadFormProps {
-  onLeadAdded: () => void;
+  onLeadAdded: (data: FormData) => void;
 }
 
 const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    requestType: 'Product Inquiry',
-    message: '',
-    status: 'new' as const,
+  const [open, setOpen] = useState(false);
+  
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      requestType: '',
+      message: ''
+    }
   });
-
-  useEffect(() => {
-    // Get the current user from the service
-    const user = leadsService.getCurrentUser();
-    setCurrentUser(user);
-    
-    // Pre-populate form with user data if available
-    if (user) {
-      setFormData(prev => ({
-        ...prev,
-        name: user.name || '',
-        email: user.email || ''
-      }));
-    }
-  }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  
+  const onSubmit = async (data: FormData) => {
+    onLeadAdded(data);
+    form.reset();
+    setOpen(false);
   };
-
-  const handleSelectChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      await leadsService.addLead({
-        ...formData,
-        userId: currentUser?.id
-      });
-      
-      onLeadAdded();
-      
-      // Reset form (keeping user info)
-      setFormData({
-        name: currentUser?.name || '',
-        email: currentUser?.email || '',
-        requestType: 'Product Inquiry',
-        message: '',
-        status: 'new',
-      });
-      
-      toast.success('Your request has been submitted successfully!');
-    } catch (error) {
-      console.error('Error adding lead:', error);
-      toast.error('Failed to submit your request');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="new-lead-button">
           <PlusCircle size={16} className="mr-2" />
           New Request
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Submit New Request</DialogTitle>
+          <DialogTitle>Create New Request</DialogTitle>
           <DialogDescription>
-            Please provide details about your request. Our team will respond as soon as possible.
+            Submit a new request to our team. We'll respond as soon as possible.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="requestType">Request Type</Label>
-            <Select 
-              value={formData.requestType} 
-              onValueChange={(value) => handleSelectChange('requestType', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select request type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Product Inquiry">Product Inquiry</SelectItem>
-                <SelectItem value="Demo Request">Demo Request</SelectItem>
-                <SelectItem value="Support">Support</SelectItem>
-                <SelectItem value="Pricing">Pricing</SelectItem>
-                <SelectItem value="Feedback">Feedback</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="message">Message</Label>
-            <Textarea
-              id="message"
-              name="message"
-              rows={4}
-              value={formData.message}
-              onChange={handleChange}
-              required
-              placeholder="Please describe your request in detail..."
-            />
-          </div>
-
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 size={16} className="mr-2 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                'Submit Request'
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="requestType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Request Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select request type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Product Inquiry">Product Inquiry</SelectItem>
+                      <SelectItem value="Demo Request">Demo Request</SelectItem>
+                      <SelectItem value="Pricing">Pricing</SelectItem>
+                      <SelectItem value="Support">Support</SelectItem>
+                      <SelectItem value="Partnership">Partnership</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
               )}
-            </Button>
-          </DialogFooter>
-        </form>
+            />
+            
+            <FormField
+              control={form.control}
+              name="message"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Message</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Tell us about your request"
+                      rows={4}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <DialogFooter>
+              <Button type="submit">Submit Request</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

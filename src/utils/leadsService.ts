@@ -2,7 +2,6 @@
 import { toast } from "sonner";
 
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
-export type LeadSource = 'registered' | 'guest';
 
 export interface Lead {
   id: string;
@@ -14,15 +13,7 @@ export interface Lead {
   requestType: string;
   message: string;
   interactions: number;
-  source: LeadSource;
-  userId?: string;
-  createdAt: string;
-}
-
-export interface EmailData {
-  to: string;
-  subject: string;
-  message: string;
+  isGuest?: boolean; // Property to identify guest vs logged-in user leads
 }
 
 // Initial mock data
@@ -37,9 +28,7 @@ const initialLeads: Lead[] = [
     requestType: 'Product Inquiry',
     message: 'I\'m interested in your AI lead scoring system. Can you tell me more about the pricing?',
     interactions: 8,
-    source: 'registered',
-    userId: 'user1',
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+    isGuest: false
   },
   {
     id: '2',
@@ -51,9 +40,7 @@ const initialLeads: Lead[] = [
     requestType: 'Demo Request',
     message: 'We\'re looking for a lead management system for our sales team of 15 people. Would like to see how your platform works.',
     interactions: 3,
-    source: 'registered',
-    userId: 'user2',
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+    isGuest: true
   },
   {
     id: '3',
@@ -65,8 +52,7 @@ const initialLeads: Lead[] = [
     requestType: 'Support',
     message: 'Having some questions about the WhatsApp integration. How does it work with our existing system?',
     interactions: 1,
-    source: 'guest',
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    isGuest: true
   },
   {
     id: '4',
@@ -78,9 +64,7 @@ const initialLeads: Lead[] = [
     requestType: 'Demo Request',
     message: 'Our marketing team is looking for a new lead management solution that integrates with our CRM. Would like to see a demo.',
     interactions: 5,
-    source: 'registered',
-    userId: 'user1',
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+    isGuest: false
   },
   {
     id: '5',
@@ -92,8 +76,7 @@ const initialLeads: Lead[] = [
     requestType: 'Pricing',
     message: 'How much does your basic plan cost? We\'re a small business with about 5 sales reps.',
     interactions: 2,
-    source: 'guest',
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+    isGuest: true
   },
   {
     id: '6',
@@ -105,16 +88,9 @@ const initialLeads: Lead[] = [
     requestType: 'Product Inquiry',
     message: 'Does your platform integrate with Salesforce? We need a solution that works with our existing tech stack.',
     interactions: 4,
-    source: 'guest',
-    createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
+    isGuest: false
   },
 ];
-
-// Mock user data
-const users = {
-  'user1': { id: 'user1', name: 'John Doe', email: 'john.doe@example.com' },
-  'user2': { id: 'user2', name: 'Jane Smith', email: 'jane.smith@example.com' }
-};
 
 // Use localStorage to persist leads data
 const getStoredLeads = (): Lead[] => {
@@ -135,54 +111,11 @@ const saveLeads = (leads: Lead[]) => {
   localStorage.setItem('leadflow_leads', JSON.stringify(leads));
 };
 
-// Get current user from localStorage
-const getCurrentUser = () => {
-  const userJson = localStorage.getItem('leadflow_current_user');
-  if (userJson) {
-    try {
-      return JSON.parse(userJson);
-    } catch (error) {
-      console.error('Error parsing user data:', error);
-      return null;
-    }
-  }
-  return null;
-};
-
-// Save current user to localStorage
-const saveCurrentUser = (user: any) => {
-  localStorage.setItem('leadflow_current_user', JSON.stringify(user));
-};
-
 // Initialize with stored or initial data
 let leads = getStoredLeads();
 
 // Simulate API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Calculate AI score based on message content and request type
-const calculateScore = (lead: Partial<Lead>): number => {
-  let score = Math.floor(Math.random() * 40) + 30; // Base score 30-70
-  
-  if (lead.message) {
-    // Longer messages typically indicate higher interest
-    if (lead.message.length > 100) score += 15;
-    
-    // Keywords analysis
-    const keywords = ['urgent', 'interested', 'buy', 'purchase', 'demo', 'pricing', 'soon', 'immediately'];
-    keywords.forEach(keyword => {
-      if (lead.message?.toLowerCase().includes(keyword)) score += 5;
-    });
-  }
-  
-  // Request type scoring
-  if (lead.requestType === 'Demo Request') score += 20;
-  if (lead.requestType === 'Product Inquiry') score += 10;
-  if (lead.requestType === 'Pricing') score += 15;
-  
-  // Cap at 99
-  return Math.min(score, 99);
-};
 
 // API simulation functions
 export const leadsService = {
@@ -191,17 +124,24 @@ export const leadsService = {
     await delay(600); // Simulate network delay
     return [...leads];
   },
-  
-  // Get leads for current user
-  getUserLeads: async (userId: string): Promise<Lead[]> => {
+
+  // Get leads for a specific user by email
+  getUserLeads: async (email: string): Promise<Lead[]> => {
     await delay(600);
-    return leads.filter(lead => lead.userId === userId);
+    // Return leads that match the user's email AND have isGuest set to false
+    return leads.filter(lead => lead.email === email && lead.isGuest === false);
   },
-  
-  // Get leads by source
-  getLeadsBySource: async (source: LeadSource): Promise<Lead[]> => {
+
+  // Get guest leads (for admin dashboard)
+  getGuestLeads: async (): Promise<Lead[]> => {
     await delay(600);
-    return leads.filter(lead => lead.source === source);
+    return leads.filter(lead => lead.isGuest === true);
+  },
+
+  // Get user leads (for admin dashboard)
+  getRegisteredUserLeads: async (): Promise<Lead[]> => {
+    await delay(600);
+    return leads.filter(lead => lead.isGuest === false);
   },
 
   // Get lead by ID
@@ -215,11 +155,7 @@ export const leadsService = {
     await delay(500);
     const index = leads.findIndex(lead => lead.id === id);
     if (index !== -1) {
-      leads[index] = { 
-        ...leads[index], 
-        status,
-        lastActivity: 'Just now'
-      };
+      leads[index] = { ...leads[index], status };
       saveLeads(leads);
       toast.success("Lead status updated successfully");
       return leads[index];
@@ -229,17 +165,18 @@ export const leadsService = {
   },
 
   // Add a new lead
-  addLead: async (lead: Omit<Lead, 'id' | 'score' | 'lastActivity' | 'interactions' | 'source' | 'createdAt'>): Promise<Lead> => {
+  addLead: async (lead: Omit<Lead, 'id' | 'score' | 'lastActivity' | 'interactions'>, isGuest: boolean = true): Promise<Lead> => {
     await delay(800);
     
     // Generate random ID
     const id = Math.random().toString(36).substring(2, 9);
     
-    // Get current user if available
-    const currentUser = getCurrentUser();
-    
-    // Calculate score
-    const score = calculateScore(lead);
+    // Calculate an AI score based on message length and requestType
+    let score = Math.floor(Math.random() * 40) + 30; // Base score 30-70
+    if (lead.message.length > 100) score += 15;
+    if (lead.requestType === 'Demo Request') score += 20;
+    if (lead.requestType === 'Product Inquiry') score += 10;
+    score = Math.min(score, 99); // Cap at 99
     
     const newLead: Lead = {
       id,
@@ -247,9 +184,7 @@ export const leadsService = {
       score,
       lastActivity: 'Just now',
       interactions: 1,
-      source: currentUser ? 'registered' : 'guest',
-      userId: currentUser?.id,
-      createdAt: new Date().toISOString()
+      isGuest
     };
     
     leads = [newLead, ...leads];
@@ -276,22 +211,6 @@ export const leadsService = {
     return undefined;
   },
 
-  // Send email
-  sendEmail: async (data: EmailData): Promise<boolean> => {
-    await delay(700);
-    console.log('Sending email:', data);
-    
-    // Simulate email success rate (90% success)
-    const success = Math.random() > 0.1;
-    
-    if (success) {
-      return true;
-    } else {
-      toast.error("Failed to send email");
-      throw new Error("Email sending failed");
-    }
-  },
-
   // Delete a lead
   deleteLead: async (id: string): Promise<boolean> => {
     await delay(500);
@@ -304,91 +223,5 @@ export const leadsService = {
     }
     toast.error("Failed to delete lead");
     return false;
-  },
-  
-  // Auth functions
-  login: async (email: string, password: string): Promise<any> => {
-    await delay(1000);
-    
-    // Extremely simplified mock authentication
-    // In a real app, this would validate against a backend
-    const isAdmin = email.includes('admin');
-    
-    if (email && password.length >= 6) {
-      const user = {
-        id: isAdmin ? 'admin1' : 'user1',
-        name: isAdmin ? 'Admin User' : 'John Doe',
-        email,
-        role: isAdmin ? 'admin' : 'user'
-      };
-      
-      saveCurrentUser(user);
-      return user;
-    }
-    
-    throw new Error('Invalid credentials');
-  },
-  
-  register: async (name: string, email: string, password: string): Promise<any> => {
-    await delay(1200);
-    
-    // Simplified mock registration
-    if (name && email && password.length >= 6) {
-      const isAdmin = email.includes('admin');
-      
-      const user = {
-        id: `user${Math.random().toString(36).substring(2, 7)}`,
-        name,
-        email,
-        role: isAdmin ? 'admin' : 'user'
-      };
-      
-      saveCurrentUser(user);
-      return user;
-    }
-    
-    throw new Error('Invalid registration data');
-  },
-  
-  logout: async (): Promise<void> => {
-    await delay(300);
-    localStorage.removeItem('leadflow_current_user');
-  },
-  
-  getCurrentUser: (): any => {
-    return getCurrentUser();
-  },
-  
-  // Get AI recommendations for lead
-  getAIRecommendations: async (leadId: string): Promise<string[]> => {
-    await delay(800);
-    const lead = leads.find(l => l.id === leadId);
-    
-    if (!lead) return [];
-    
-    // Generate recommendations based on lead properties
-    const recommendations = [];
-    
-    if (lead.score > 80) {
-      recommendations.push("This lead shows high purchase intent. Consider scheduling a personal call.");
-    } else if (lead.score > 60) {
-      recommendations.push("This lead shows moderate interest. Send detailed product information.");
-    } else {
-      recommendations.push("This lead needs nurturing. Include educational content in your follow-up.");
-    }
-    
-    if (lead.requestType === 'Demo Request') {
-      recommendations.push("Prepare a personalized demo focusing on their specific needs.");
-    } else if (lead.requestType === 'Pricing') {
-      recommendations.push("Include a special offer in your next communication.");
-    }
-    
-    if (lead.interactions < 2) {
-      recommendations.push("This is a new conversation. Focus on building rapport.");
-    } else if (lead.interactions > 5) {
-      recommendations.push("This lead has engaged multiple times. Consider offering a free consultation.");
-    }
-    
-    return recommendations;
   }
 };

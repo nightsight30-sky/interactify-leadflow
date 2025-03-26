@@ -6,20 +6,28 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MessageSquare, Mail } from 'lucide-react';
 import { LeadStatus, leadsService } from '@/utils/leadsService';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
 interface LeadInteractionProps {
   leadId: string;
-  leadEmail?: string;
+  recipientEmail?: string;
+  recipientName?: string;
   isAdmin?: boolean;
   onInteractionComplete: () => void;
 }
 
-const LeadInteraction = ({ leadId, leadEmail, isAdmin = false, onInteractionComplete }: LeadInteractionProps) => {
+const LeadInteraction = ({ 
+  leadId, 
+  recipientEmail, 
+  recipientName,
+  isAdmin = false, 
+  onInteractionComplete 
+}: LeadInteractionProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+  const [subject, setSubject] = useState('');
   const [newStatus, setNewStatus] = useState<LeadStatus | ''>('');
-  const [sendEmail, setSendEmail] = useState(isAdmin && !!leadEmail);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,16 +37,6 @@ const LeadInteraction = ({ leadId, leadEmail, isAdmin = false, onInteractionComp
       // Record the interaction
       if (message.trim()) {
         await leadsService.addInteraction(leadId, message);
-        
-        // Send email if enabled and we have an email address
-        if (sendEmail && leadEmail) {
-          await leadsService.sendEmail({
-            to: leadEmail,
-            subject: isAdmin ? 'Response to Your Request' : 'New Message from User',
-            message
-          });
-          toast.success('Email sent successfully');
-        }
       }
       
       // Update status if changed and admin
@@ -46,24 +44,29 @@ const LeadInteraction = ({ leadId, leadEmail, isAdmin = false, onInteractionComp
         await leadsService.updateLeadStatus(leadId, newStatus as LeadStatus);
       }
       
+      // Send email if admin
+      if (isAdmin && recipientEmail && subject.trim() && message.trim()) {
+        // In a real application, this would connect to an email API
+        // For now, we'll simulate email sending with a delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        toast.success(`Email sent to ${recipientEmail}`);
+      }
+      
       onInteractionComplete();
       setMessage('');
+      setSubject('');
       setNewStatus('');
     } catch (error) {
       console.error('Error during lead interaction:', error);
-      toast.error('Failed to process your request');
+      toast.error('Failed to send message');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleStatusChange = (value: string) => {
-    // Explicitly cast the value as LeadStatus if it's a valid status
-    if (value === 'new' || value === 'contacted' || value === 'qualified' || value === 'converted' || value === 'lost') {
-      setNewStatus(value as LeadStatus);
-    } else if (value === '') {
-      setNewStatus('');
-    }
+  // Handle SelectValue change with type safety
+  const handleSelectChange = (value: string) => {
+    setNewStatus(value as LeadStatus);
   };
 
   return (
@@ -83,15 +86,40 @@ const LeadInteraction = ({ leadId, leadEmail, isAdmin = false, onInteractionComp
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{isAdmin ? "Interact with Lead" : "Respond to Your Request"}</DialogTitle>
+          <DialogTitle>
+            {isAdmin 
+              ? `Email to ${recipientName || 'Lead'}`
+              : "Respond to Your Request"
+            }
+          </DialogTitle>
           <DialogDescription>
             {isAdmin 
-              ? "Send a message to this lead and update their status if needed." 
+              ? `Send an email to ${recipientEmail || 'the lead'} and update their status if needed.` 
               : "Add additional information or respond to your request."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          {isAdmin && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">To:</label>
+              <Input value={recipientEmail || ''} readOnly className="bg-gray-50" />
+            </div>
+          )}
+
+          {isAdmin && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Subject:</label>
+              <Input
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Email subject"
+                required={isAdmin}
+              />
+            </div>
+          )}
+
           <div className="space-y-2">
+            <label className="text-sm font-medium">Message:</label>
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -102,38 +130,24 @@ const LeadInteraction = ({ leadId, leadEmail, isAdmin = false, onInteractionComp
           </div>
 
           {isAdmin && (
-            <>
-              <div className="space-y-2">
-                <div className="text-sm font-medium">Update Lead Status</div>
-                <Select value={newStatus} onValueChange={handleStatusChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Keep current status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="contacted">Contacted</SelectItem>
-                    <SelectItem value="qualified">Qualified</SelectItem>
-                    <SelectItem value="converted">Converted</SelectItem>
-                    <SelectItem value="lost">Lost</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {leadEmail && (
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="sendEmail"
-                    checked={sendEmail}
-                    onChange={(e) => setSendEmail(e.target.checked)}
-                    className="rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="sendEmail" className="text-sm">
-                    Send this message as an email to {leadEmail}
-                  </label>
-                </div>
-              )}
-            </>
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Update Lead Status</div>
+              <Select 
+                value={newStatus} 
+                onValueChange={handleSelectChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Keep current status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="contacted">Contacted</SelectItem>
+                  <SelectItem value="qualified">Qualified</SelectItem>
+                  <SelectItem value="converted">Converted</SelectItem>
+                  <SelectItem value="lost">Lost</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
           <DialogFooter>
@@ -141,7 +155,7 @@ const LeadInteraction = ({ leadId, leadEmail, isAdmin = false, onInteractionComp
               <Button type="button" variant="outline">Cancel</Button>
             </DialogClose>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Sending...' : 'Send Message'}
+              {isSubmitting ? 'Sending...' : isAdmin ? 'Send Email' : 'Send Message'}
             </Button>
           </DialogFooter>
         </form>
