@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,6 +16,9 @@ import {
 } from 'lucide-react';
 import { leadsService, Lead, LeadStatus } from '@/utils/leadsService';
 import { toast } from 'sonner';
+import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
+import AIInsights from '@/components/ai/AIInsights';
+import MessageCenter from '@/components/messages/MessageCenter';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -538,6 +540,18 @@ const AdminDashboard = () => {
               </>
             )}
             
+            {activeMainTab === 'analytics' && (
+              <AnalyticsDashboard />
+            )}
+            
+            {activeMainTab === 'ai' && (
+              <AIInsights />
+            )}
+            
+            {activeMainTab === 'messages' && (
+              <MessageCenter />
+            )}
+            
             {activeMainTab === 'profile' && (
               <div className="space-y-6">
                 <div>
@@ -548,20 +562,14 @@ const AdminDashboard = () => {
               </div>
             )}
             
-            {activeMainTab !== 'dashboard' && activeMainTab !== 'profile' && (
+            {(activeMainTab === 'email' || activeMainTab === 'calendar' || activeMainTab === 'team') && (
               <div className="flex flex-col items-center justify-center py-12">
                 <div className="bg-primary/10 p-6 rounded-full mb-4">
-                  {activeMainTab === 'analytics' && <BarChart3 size={48} className="text-primary" />}
-                  {activeMainTab === 'ai' && <Brain size={48} className="text-primary" />}
-                  {activeMainTab === 'messages' && <MessageSquare size={48} className="text-primary" />}
                   {activeMainTab === 'email' && <Mail size={48} className="text-primary" />}
                   {activeMainTab === 'calendar' && <Calendar size={48} className="text-primary" />}
                   {activeMainTab === 'team' && <User size={48} className="text-primary" />}
                 </div>
                 <h2 className="text-2xl font-bold mb-2">
-                  {activeMainTab === 'analytics' && 'Analytics Dashboard'}
-                  {activeMainTab === 'ai' && 'AI Insights'}
-                  {activeMainTab === 'messages' && 'Message Center'}
                   {activeMainTab === 'email' && 'Email Campaigns'}
                   {activeMainTab === 'calendar' && 'Calendar'}
                   {activeMainTab === 'team' && 'Team Management'}

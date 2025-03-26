@@ -13,7 +13,7 @@ export interface Lead {
   requestType: string;
   message: string;
   interactions: number;
-  isGuest?: boolean; // New property to identify guest vs logged-in user leads
+  isGuest?: boolean; // Property to identify guest vs logged-in user leads
 }
 
 // Initial mock data
@@ -128,6 +128,7 @@ export const leadsService = {
   // Get leads for a specific user by email
   getUserLeads: async (email: string): Promise<Lead[]> => {
     await delay(600);
+    // Return leads that match the user's email AND have isGuest set to false
     return leads.filter(lead => lead.email === email && lead.isGuest === false);
   },
 
