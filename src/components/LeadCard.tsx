@@ -1,11 +1,12 @@
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { BarChart, Clock, MessageSquare } from 'lucide-react';
-import LeadDetailDialog from './LeadDetailDialog';
+import { Button } from '@/components/ui/button';
+import { Lead, leadsService } from '@/utils/leadsService';
+import { Trash2, PhoneForwarded, BarChart3 } from 'lucide-react';
+import { toast } from 'sonner';
 import LeadInteraction from './LeadInteraction';
-import { Lead } from '@/utils/leadsService';
+import { useState } from 'react';
 
 interface LeadCardProps {
   lead: Lead;
@@ -13,104 +14,126 @@ interface LeadCardProps {
   onLeadUpdated: () => void;
 }
 
-const statusColors = {
-  new: 'bg-blue-100 text-blue-800',
-  contacted: 'bg-purple-100 text-purple-800',
-  qualified: 'bg-amber-100 text-amber-800',
-  converted: 'bg-green-100 text-green-800',
-  lost: 'bg-red-100 text-red-800',
-};
-
 const LeadCard = ({ lead, isAdmin = false, onLeadUpdated }: LeadCardProps) => {
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 bg-green-50';
-    if (score >= 60) return 'text-amber-600 bg-amber-50';
-    if (score >= 40) return 'text-blue-600 bg-blue-50';
-    return 'text-gray-600 bg-gray-50';
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+
+  const getStatusColor = (status: string): string => {
+    const colors = {
+      new: 'bg-blue-500',
+      contacted: 'bg-yellow-500',
+      qualified: 'bg-green-500',
+      converted: 'bg-purple-500',
+      lost: 'bg-gray-500'
+    };
+    return colors[status as keyof typeof colors] || 'bg-gray-500';
   };
-  
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+
+  const getScoreColor = (score: number): string => {
+    if (score >= 80) return 'text-green-500';
+    if (score >= 60) return 'text-yellow-500';
+    if (score >= 40) return 'text-orange-500';
+    return 'text-red-500';
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete this lead?')) {
+      setIsDeleting(true);
+      try {
+        await leadsService.deleteLead(lead.id);
+        onLeadUpdated();
+      } catch (error) {
+        console.error('Error deleting lead:', error);
+        toast.error('Failed to delete lead');
+      } finally {
+        setIsDeleting(false);
+      }
+    }
+  };
+
+  const fetchAIRecommendations = async () => {
+    try {
+      const recs = await leadsService.getAIRecommendations(lead.id);
+      setRecommendations(recs);
+      setShowRecommendations(true);
+    } catch (error) {
+      console.error('Error fetching AI recommendations:', error);
+      toast.error('Failed to get AI recommendations');
+    }
   };
 
   return (
-    <Card className="overflow-hidden transition-all duration-300 hover:shadow-md border border-gray-100">
-      <CardHeader className="p-4 pb-0 flex flex-row items-start justify-between space-y-0">
-        <div className="flex items-center space-x-3">
-          <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-primary/10 text-primary">
-              {getInitials(lead.name)}
-            </AvatarFallback>
-          </Avatar>
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-base font-semibold">{lead.name}</CardTitle>
-            <p className="text-sm text-gray-500">{lead.email}</p>
+            <CardTitle className="mb-1">{lead.name}</CardTitle>
+            <CardDescription>{lead.email}</CardDescription>
+          </div>
+          <div className="flex flex-col items-end">
+            <Badge className={`${getStatusColor(lead.status)} text-white`}>
+              {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
+            </Badge>
+            {isAdmin && (
+              <span className={`text-sm font-semibold mt-1 ${getScoreColor(lead.score)}`}>
+                Score: {lead.score}
+              </span>
+            )}
           </div>
         </div>
-        
-        <Badge className={statusColors[lead.status]}>
-          {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
-        </Badge>
       </CardHeader>
-      
-      <CardContent className="p-4">
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          <div className="flex flex-col">
-            <span className="text-xs text-gray-500 mb-1">Lead Score</span>
-            <span className={`text-sm font-medium rounded-full py-0.5 px-2 inline-flex items-center w-fit ${getScoreColor(lead.score)}`}>
-              <BarChart size={14} className="mr-1" />
-              {lead.score}/100
-            </span>
+      <CardContent className="py-2 flex-grow">
+        <div className="mb-4">
+          <div className="text-sm font-medium text-gray-500 mb-1">
+            {lead.requestType}
           </div>
-          
-          <div className="flex flex-col">
-            <span className="text-xs text-gray-500 mb-1">Last Activity</span>
-            <span className="text-sm text-gray-700 flex items-center">
-              <Clock size={14} className="mr-1 text-gray-500" />
-              {lead.lastActivity}
-            </span>
-          </div>
-          
-          <div className="flex flex-col">
-            <span className="text-xs text-gray-500 mb-1">Request Type</span>
-            <span className="text-sm text-gray-700">{lead.requestType}</span>
-          </div>
-          
-          <div className="flex flex-col">
-            <span className="text-xs text-gray-500 mb-1">Interactions</span>
-            <span className="text-sm text-gray-700 flex items-center">
-              <MessageSquare size={14} className="mr-1 text-gray-500" />
-              {lead.interactions}
-            </span>
-          </div>
+          <p className="text-sm line-clamp-3">{lead.message}</p>
         </div>
         
-        <div className="mt-2">
-          <span className="text-xs text-gray-500 mb-1 block">Message</span>
-          <p className="text-sm text-gray-700 line-clamp-2">{lead.message}</p>
+        <div className="mt-3 text-xs text-gray-500 flex justify-between">
+          <span>Last activity: {lead.lastActivity}</span>
+          <span>{lead.interactions} interaction{lead.interactions !== 1 ? 's' : ''}</span>
         </div>
-      </CardContent>
-      
-      <CardFooter className="p-4 pt-0 flex justify-between">
-        {isAdmin ? (
-          <>
-            <LeadInteraction 
-              leadId={lead.id} 
-              isAdmin={true} 
-              onInteractionComplete={onLeadUpdated} 
-            />
-            <LeadDetailDialog
-              leadId={lead.id}
-              isAdmin={true}
-              onLeadUpdated={onLeadUpdated}
-            />
-          </>
-        ) : (
-          <LeadDetailDialog
-            leadId={lead.id}
-            onLeadUpdated={onLeadUpdated}
-          />
+
+        {showRecommendations && recommendations.length > 0 && (
+          <div className="mt-3 p-2 bg-blue-50 rounded-md">
+            <h4 className="text-xs font-semibold text-blue-700 mb-1">AI Recommendations</h4>
+            <ul className="text-xs text-blue-600 list-disc pl-4 space-y-1">
+              {recommendations.map((rec, index) => (
+                <li key={index}>{rec}</li>
+              ))}
+            </ul>
+          </div>
         )}
+      </CardContent>
+      <CardFooter className="pt-2">
+        <div className="w-full grid grid-cols-2 gap-2">
+          {isAdmin ? (
+            <>
+              <LeadInteraction 
+                leadId={lead.id} 
+                leadEmail={lead.email}
+                isAdmin={true} 
+                onInteractionComplete={onLeadUpdated} 
+              />
+              <Button size="sm" variant="outline" className="flex-1" onClick={fetchAIRecommendations}>
+                <BarChart3 size={14} className="mr-1" /> AI Insights
+              </Button>
+            </>
+          ) : (
+            <>
+              <LeadInteraction 
+                leadId={lead.id}
+                onInteractionComplete={onLeadUpdated} 
+              />
+              <Button size="sm" variant="outline" disabled={isDeleting} onClick={handleDelete}>
+                <Trash2 size={14} className="mr-1" /> 
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

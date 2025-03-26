@@ -6,17 +6,20 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MessageSquare, Mail } from 'lucide-react';
 import { LeadStatus, leadsService } from '@/utils/leadsService';
+import { toast } from 'sonner';
 
 interface LeadInteractionProps {
   leadId: string;
+  leadEmail?: string;
   isAdmin?: boolean;
   onInteractionComplete: () => void;
 }
 
-const LeadInteraction = ({ leadId, isAdmin = false, onInteractionComplete }: LeadInteractionProps) => {
+const LeadInteraction = ({ leadId, leadEmail, isAdmin = false, onInteractionComplete }: LeadInteractionProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [newStatus, setNewStatus] = useState<LeadStatus | ''>('');
+  const [sendEmail, setSendEmail] = useState(isAdmin && !!leadEmail);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +29,16 @@ const LeadInteraction = ({ leadId, isAdmin = false, onInteractionComplete }: Lea
       // Record the interaction
       if (message.trim()) {
         await leadsService.addInteraction(leadId, message);
+        
+        // Send email if enabled and we have an email address
+        if (sendEmail && leadEmail) {
+          await leadsService.sendEmail({
+            to: leadEmail,
+            subject: isAdmin ? 'Response to Your Request' : 'New Message from User',
+            message
+          });
+          toast.success('Email sent successfully');
+        }
       }
       
       // Update status if changed and admin
@@ -38,6 +51,7 @@ const LeadInteraction = ({ leadId, isAdmin = false, onInteractionComplete }: Lea
       setNewStatus('');
     } catch (error) {
       console.error('Error during lead interaction:', error);
+      toast.error('Failed to process your request');
     } finally {
       setIsSubmitting(false);
     }
@@ -79,21 +93,38 @@ const LeadInteraction = ({ leadId, isAdmin = false, onInteractionComplete }: Lea
           </div>
 
           {isAdmin && (
-            <div className="space-y-2">
-              <div className="text-sm font-medium">Update Lead Status</div>
-              <Select value={newStatus} onValueChange={setNewStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Keep current status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">New</SelectItem>
-                  <SelectItem value="contacted">Contacted</SelectItem>
-                  <SelectItem value="qualified">Qualified</SelectItem>
-                  <SelectItem value="converted">Converted</SelectItem>
-                  <SelectItem value="lost">Lost</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <>
+              <div className="space-y-2">
+                <div className="text-sm font-medium">Update Lead Status</div>
+                <Select value={newStatus} onValueChange={setNewStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Keep current status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">New</SelectItem>
+                    <SelectItem value="contacted">Contacted</SelectItem>
+                    <SelectItem value="qualified">Qualified</SelectItem>
+                    <SelectItem value="converted">Converted</SelectItem>
+                    <SelectItem value="lost">Lost</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {leadEmail && (
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="sendEmail"
+                    checked={sendEmail}
+                    onChange={(e) => setSendEmail(e.target.checked)}
+                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <label htmlFor="sendEmail" className="text-sm">
+                    Send this message as an email to {leadEmail}
+                  </label>
+                </div>
+              )}
+            </>
           )}
 
           <DialogFooter>

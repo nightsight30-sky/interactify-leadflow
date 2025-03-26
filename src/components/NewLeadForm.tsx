@@ -1,13 +1,13 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import { leadsService } from '@/utils/leadsService';
+import { toast } from 'sonner';
 
 interface NewLeadFormProps {
   onLeadAdded: () => void;
@@ -15,6 +15,7 @@ interface NewLeadFormProps {
 
 const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,6 +23,21 @@ const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
     message: '',
     status: 'new' as const,
   });
+
+  useEffect(() => {
+    // Get the current user from the service
+    const user = leadsService.getCurrentUser();
+    setCurrentUser(user);
+    
+    // Pre-populate form with user data if available
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || '',
+        email: user.email || ''
+      }));
+    }
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -37,18 +53,26 @@ const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
     setIsSubmitting(true);
 
     try {
-      await leadsService.addLead(formData);
+      await leadsService.addLead({
+        ...formData,
+        userId: currentUser?.id
+      });
+      
       onLeadAdded();
-      // Reset form
+      
+      // Reset form (keeping user info)
       setFormData({
-        name: '',
-        email: '',
+        name: currentUser?.name || '',
+        email: currentUser?.email || '',
         requestType: 'Product Inquiry',
         message: '',
         status: 'new',
       });
+      
+      toast.success('Your request has been submitted successfully!');
     } catch (error) {
       console.error('Error adding lead:', error);
+      toast.error('Failed to submit your request');
     } finally {
       setIsSubmitting(false);
     }
@@ -131,7 +155,14 @@ const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
               <Button type="button" variant="outline">Cancel</Button>
             </DialogClose>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Submitting...' : 'Submit Request'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={16} className="mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                'Submit Request'
+              )}
             </Button>
           </DialogFooter>
         </form>
