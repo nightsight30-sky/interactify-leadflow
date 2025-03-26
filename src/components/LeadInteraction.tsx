@@ -28,9 +28,6 @@ const LeadInteraction = ({
   const [message, setMessage] = useState('');
   const [subject, setSubject] = useState('');
   const [newStatus, setNewStatus] = useState<LeadStatus | ''>('');
-  const [cc, setCc] = useState('');
-  const [bcc, setBcc] = useState('');
-  const [showCcBcc, setShowCcBcc] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,23 +46,8 @@ const LeadInteraction = ({
       
       // Send email if admin
       if (isAdmin && recipientEmail && subject.trim() && message.trim()) {
-        // In a real-world application, this would connect to an email API
-        // For demonstration purposes, we'll simulate email sending
-        
-        // Prepare email data
-        const emailData = {
-          to: recipientEmail,
-          subject: subject,
-          message: message,
-          cc: cc.split(',').map(email => email.trim()).filter(email => email),
-          bcc: bcc.split(',').map(email => email.trim()).filter(email => email),
-          from: 'support@leadflow.com',
-          replyTo: 'support@leadflow.com'
-        };
-        
-        console.log('Sending email:', emailData);
-        
-        // Simulate API call
+        // In a real application, this would connect to an email API
+        // For now, we'll simulate email sending with a delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         toast.success(`Email sent to ${recipientEmail}`);
       }
@@ -74,9 +56,6 @@ const LeadInteraction = ({
       setMessage('');
       setSubject('');
       setNewStatus('');
-      setCc('');
-      setBcc('');
-      setShowCcBcc(false);
     } catch (error) {
       console.error('Error during lead interaction:', error);
       toast.error('Failed to send message');
@@ -121,46 +100,10 @@ const LeadInteraction = ({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           {isAdmin && (
-            <>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">To:</label>
-                <Input value={recipientEmail || ''} readOnly className="bg-gray-50" />
-              </div>
-              
-              {showCcBcc && (
-                <>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">CC:</label>
-                    <Input
-                      value={cc}
-                      onChange={(e) => setCc(e.target.value)}
-                      placeholder="Comma separated email addresses"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">BCC:</label>
-                    <Input
-                      value={bcc}
-                      onChange={(e) => setBcc(e.target.value)}
-                      placeholder="Comma separated email addresses"
-                    />
-                  </div>
-                </>
-              )}
-              
-              <div className="flex justify-end">
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setShowCcBcc(!showCcBcc)}
-                  className="text-xs"
-                >
-                  {showCcBcc ? 'Hide CC/BCC' : 'Show CC/BCC'}
-                </Button>
-              </div>
-            </>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">To:</label>
+              <Input value={recipientEmail || ''} readOnly className="bg-gray-50" />
+            </div>
           )}
 
           {isAdmin && (

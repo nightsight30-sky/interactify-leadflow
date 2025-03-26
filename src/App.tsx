@@ -14,8 +14,6 @@ import Pricing from "./pages/Pricing";
 import WhatsAppIntegration from "./pages/WhatsAppIntegration";
 import Learn from "./pages/Learn";
 import NotFound from "./pages/NotFound";
-import EmailHistory from "./pages/EmailHistory";
-import UserMessages from "./pages/UserMessages";
 
 const queryClient = new QueryClient();
 
@@ -35,8 +33,6 @@ const App = () => (
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/whatsapp-integration" element={<WhatsAppIntegration />} />
           <Route path="/learn" element={<Learn />} />
-          <Route path="/email-history" element={<EmailHistory />} />
-          <Route path="/user-messages" element={<UserMessages />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

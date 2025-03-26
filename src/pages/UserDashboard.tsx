@@ -24,38 +24,36 @@ const UserDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
   
-  const [userName, setUserName] = useState<string>('');
-  const [userEmail, setUserEmail] = useState<string>('');
-
-  useEffect(() => {
-    const getUserData = () => {
-      if (location.state?.userEmail && location.state?.userName) {
-        localStorage.setItem('userEmail', location.state.userEmail);
-        localStorage.setItem('userName', location.state.userName);
-        setUserEmail(location.state.userEmail);
-        setUserName(location.state.userName);
-        return;
-      }
-      
-      const storedEmail = localStorage.getItem('userEmail');
-      const storedName = localStorage.getItem('userName');
-      
-      if (storedEmail && storedName) {
-        setUserEmail(storedEmail);
-        setUserName(storedName);
-        return;
-      }
-      
-      toast.error('User session expired. Please login again.');
-      navigate('/login');
-    };
-
-    getUserData();
-  }, [location, navigate]);
+  const getUserData = () => {
+    if (location.state?.userEmail && location.state?.userName) {
+      localStorage.setItem('userEmail', location.state.userEmail);
+      localStorage.setItem('userName', location.state.userName);
+      return {
+        email: location.state.userEmail,
+        name: location.state.userName
+      };
+    }
+    
+    const storedEmail = localStorage.getItem('userEmail');
+    const storedName = localStorage.getItem('userName');
+    
+    if (storedEmail && storedName) {
+      return {
+        email: storedEmail,
+        name: storedName
+      };
+    }
+    
+    toast.error('User session expired. Please login again.');
+    navigate('/login');
+    return { email: '', name: '' };
+  };
+  
+  const userData = getUserData();
+  const [userEmail, setUserEmail] = useState(userData.email);
+  const [userName, setUserName] = useState(userData.name);
   
   const fetchLeads = async () => {
-    if (!userEmail) return;
-    
     setIsLoading(true);
     try {
       const data = await leadsService.getUserLeads(userEmail);
@@ -75,7 +73,8 @@ const UserDashboard = () => {
   }, [userEmail]);
   
   const handleLogout = () => {
-    localStorage.removeItem('userLoggedIn');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
     toast.success('Successfully logged out');
     navigate('/login');
   };
@@ -111,7 +110,7 @@ const UserDashboard = () => {
         requestType: formData.requestType,
         message: formData.message,
         status: 'new'
-      }, false);
+      }, true);
       fetchLeads();
       toast.success('Request submitted successfully');
     } catch (error) {
