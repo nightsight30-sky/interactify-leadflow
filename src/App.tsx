@@ -9,6 +9,9 @@ import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import UserDashboard from "./pages/UserDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import BusinessDashboard from "./pages/BusinessDashboard";
+import TeamDashboard from "./pages/TeamDashboard";
+import Settings from "./pages/Settings";
 import About from "./pages/About";
 import Pricing from "./pages/Pricing";
 import WhatsAppIntegration from "./pages/WhatsAppIntegration";
@@ -29,6 +32,9 @@ const App = () => (
           <Route path="/signup" element={<SignUp />} />
           <Route path="/user-dashboard" element={<UserDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/business-dashboard" element={<BusinessDashboard />} />
+          <Route path="/team-dashboard" element={<TeamDashboard />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/about" element={<About />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/whatsapp-integration" element={<WhatsAppIntegration />} />
