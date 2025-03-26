@@ -1,128 +1,140 @@
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { PlusCircle } from 'lucide-react';
-import { toast } from 'sonner';
-
-// Define form schema
-const formSchema = z.object({
-  requestType: z.string().min(1, { message: 'Please select a request type' }),
-  message: z.string().min(10, { message: 'Message must be at least 10 characters' })
-});
-
-type FormData = z.infer<typeof formSchema>;
+import { leadsService } from '@/utils/leadsService';
 
 interface NewLeadFormProps {
-  onLeadAdded: (data: FormData) => void;
+  onLeadAdded: () => void;
 }
 
 const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
-  const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      requestType: '',
-      message: ''
-    }
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    requestType: 'Product Inquiry',
+    message: '',
+    status: 'new' as const,
   });
-  
-  const onSubmit = async (data: FormData) => {
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
     try {
-      setIsSubmitting(true);
-      
-      // Call the parent component's handler
-      onLeadAdded(data);
-      
-      // Reset form and close dialog
-      form.reset();
-      setOpen(false);
-      toast.success("Request submitted successfully");
+      await leadsService.addLead(formData);
+      onLeadAdded();
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        requestType: 'Product Inquiry',
+        message: '',
+        status: 'new',
+      });
     } catch (error) {
-      console.error("Error submitting request:", error);
-      toast.error("Failed to submit request. Please try again.");
+      console.error('Error adding lead:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog>
       <DialogTrigger asChild>
-        <Button className="new-lead-button">
+        <Button>
           <PlusCircle size={16} className="mr-2" />
           New Request
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create New Request</DialogTitle>
+          <DialogTitle>Submit New Request</DialogTitle>
           <DialogDescription>
-            Submit a new request to our team. We'll respond as soon as possible.
+            Please provide details about your request. Our team will respond as soon as possible.
           </DialogDescription>
         </DialogHeader>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="requestType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Request Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select request type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Product Inquiry">Product Inquiry</SelectItem>
-                      <SelectItem value="Demo Request">Demo Request</SelectItem>
-                      <SelectItem value="Pricing">Pricing</SelectItem>
-                      <SelectItem value="Support">Support</SelectItem>
-                      <SelectItem value="Partnership">Partnership</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="requestType">Request Type</Label>
+            <Select 
+              value={formData.requestType} 
+              onValueChange={(value) => handleSelectChange('requestType', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select request type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Product Inquiry">Product Inquiry</SelectItem>
+                <SelectItem value="Demo Request">Demo Request</SelectItem>
+                <SelectItem value="Support">Support</SelectItem>
+                <SelectItem value="Pricing">Pricing</SelectItem>
+                <SelectItem value="Feedback">Feedback</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="message">Message</Label>
+            <Textarea
+              id="message"
               name="message"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Message</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Tell us about your request"
-                      rows={4}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              rows={4}
+              value={formData.message}
+              onChange={handleChange}
+              required
+              placeholder="Please describe your request in detail..."
             />
-            
-            <DialogFooter>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Submitting...' : 'Submit Request'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Submitting...' : 'Submit Request'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
