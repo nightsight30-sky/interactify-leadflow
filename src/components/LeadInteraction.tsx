@@ -57,6 +57,15 @@ const LeadInteraction = ({ leadId, leadEmail, isAdmin = false, onInteractionComp
     }
   };
 
+  const handleStatusChange = (value: string) => {
+    // Explicitly cast the value as LeadStatus if it's a valid status
+    if (value === 'new' || value === 'contacted' || value === 'qualified' || value === 'converted' || value === 'lost') {
+      setNewStatus(value as LeadStatus);
+    } else if (value === '') {
+      setNewStatus('');
+    }
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -96,7 +105,7 @@ const LeadInteraction = ({ leadId, leadEmail, isAdmin = false, onInteractionComp
             <>
               <div className="space-y-2">
                 <div className="text-sm font-medium">Update Lead Status</div>
-                <Select value={newStatus} onValueChange={setNewStatus}>
+                <Select value={newStatus} onValueChange={handleStatusChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Keep current status" />
                   </SelectTrigger>

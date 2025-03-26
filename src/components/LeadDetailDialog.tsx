@@ -84,6 +84,15 @@ const LeadDetailDialog = ({ leadId, isAdmin = false, onLeadUpdated, trigger }: L
     return 'text-gray-600 bg-gray-50';
   };
 
+  const handleValueChange = (value: string) => {
+    // Explicitly cast the value as LeadStatus if it's a valid status
+    if (value === 'new' || value === 'contacted' || value === 'qualified' || value === 'converted' || value === 'lost') {
+      setStatus(value as LeadStatus);
+    } else if (value === '') {
+      setStatus('');
+    }
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -163,7 +172,7 @@ const LeadDetailDialog = ({ leadId, isAdmin = false, onLeadUpdated, trigger }: L
               <div className="mt-6 space-y-4">
                 <div className="flex items-center space-x-4">
                   <span className="text-sm text-gray-700">Update Status:</span>
-                  <Select value={status} onValueChange={setStatus}>
+                  <Select value={status} onValueChange={handleValueChange}>
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
@@ -188,6 +197,7 @@ const LeadDetailDialog = ({ leadId, isAdmin = false, onLeadUpdated, trigger }: L
                 <div className="flex space-x-3 mt-6">
                   <LeadInteraction 
                     leadId={lead.id}
+                    leadEmail={lead.email}
                     isAdmin={true}
                     onInteractionComplete={() => {
                       fetchLead();
