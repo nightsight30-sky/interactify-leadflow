@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import LeadCard from '@/components/LeadCard';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, ListFilter, MessageSquare, Search, 
   Bell, LogOut, User, Settings, Mail
@@ -17,17 +17,46 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [activeMainTab, setActiveMainTab] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [userName, setUserName] = useState('John');
+  
+  const getUserData = () => {
+    if (location.state?.userEmail && location.state?.userName) {
+      localStorage.setItem('userEmail', location.state.userEmail);
+      localStorage.setItem('userName', location.state.userName);
+      return {
+        email: location.state.userEmail,
+        name: location.state.userName
+      };
+    }
+    
+    const storedEmail = localStorage.getItem('userEmail');
+    const storedName = localStorage.getItem('userName');
+    
+    if (storedEmail && storedName) {
+      return {
+        email: storedEmail,
+        name: storedName
+      };
+    }
+    
+    toast.error('User session expired. Please login again.');
+    navigate('/login');
+    return { email: '', name: '' };
+  };
+  
+  const userData = getUserData();
+  const [userEmail, setUserEmail] = useState(userData.email);
+  const [userName, setUserName] = useState(userData.name);
   
   const fetchLeads = async () => {
     setIsLoading(true);
     try {
-      const data = await leadsService.getLeads();
+      const data = await leadsService.getUserLeads(userEmail);
       setLeads(data);
     } catch (error) {
       console.error('Error fetching leads:', error);
@@ -38,23 +67,25 @@ const UserDashboard = () => {
   };
 
   useEffect(() => {
-    fetchLeads();
-  }, []);
+    if (userEmail) {
+      fetchLeads();
+    }
+  }, [userEmail]);
   
   const handleLogout = () => {
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
     toast.success('Successfully logged out');
     navigate('/login');
   };
 
   const filteredLeads = leads.filter(lead => {
-    // Filter by search query
     const matchesQuery = 
       lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.requestType.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Filter by tab
     if (activeTab === 'all') return matchesQuery;
     if (activeTab === 'active') return matchesQuery && lead.status !== 'converted' && lead.status !== 'lost';
     if (activeTab === 'completed') return matchesQuery && (lead.status === 'converted' || lead.status === 'lost');
@@ -67,7 +98,31 @@ const UserDashboard = () => {
   };
 
   const getInitials = (name: string) => {
+    if (!name) return '';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  const handleLeadSubmit = async (formData: any) => {
+    try {
+      await leadsService.addLead({
+        name: userName,
+        email: userEmail,
+        requestType: formData.requestType,
+        message: formData.message,
+        status: 'new'
+      }, true);
+      fetchLeads();
+      toast.success('Request submitted successfully');
+    } catch (error) {
+      console.error('Error submitting lead:', error);
+      toast.error('Failed to submit your request');
+    }
+  };
+
+  const updateUserProfile = () => {
+    localStorage.setItem('userEmail', userEmail);
+    localStorage.setItem('userName', userName);
+    toast.success("Profile updated successfully");
   };
 
   return (
@@ -164,7 +219,7 @@ const UserDashboard = () => {
                     <p className="text-gray-500">Track your requests and lead activity</p>
                   </div>
                   <div className="mt-4 sm:mt-0">
-                    <NewLeadForm onLeadAdded={fetchLeads} />
+                    <NewLeadForm onLeadAdded={handleLeadSubmit} />
                   </div>
                 </div>
                 
@@ -228,7 +283,12 @@ const UserDashboard = () => {
                     ) : (
                       <div className="text-center py-12 border rounded-lg bg-gray-50">
                         <p className="text-gray-500 mb-4">No requests found</p>
-                        <NewLeadForm onLeadAdded={fetchLeads} />
+                        <Button variant="outline" onClick={() => {
+                          const newLeadButton = document.querySelector('.new-lead-button') as HTMLButtonElement;
+                          if (newLeadButton) newLeadButton.click();
+                        }}>
+                          Create New Request
+                        </Button>
                       </div>
                     )}
                   </TabsContent>
@@ -270,7 +330,7 @@ const UserDashboard = () => {
                     ) : (
                       <div className="text-center py-12 border rounded-lg bg-gray-50">
                         <p className="text-gray-500 mb-4">No active requests found</p>
-                        <NewLeadForm onLeadAdded={fetchLeads} />
+                        <NewLeadForm onLeadAdded={handleLeadSubmit} />
                       </div>
                     )}
                   </TabsContent>
@@ -365,8 +425,8 @@ const UserDashboard = () => {
                           </AvatarFallback>
                         </Avatar>
                         <div className="text-center">
-                          <h3 className="text-lg font-semibold">{userName} Smith</h3>
-                          <p className="text-sm text-gray-500">john@example.com</p>
+                          <h3 className="text-lg font-semibold">{userName}</h3>
+                          <p className="text-sm text-gray-500">{userEmail}</p>
                         </div>
                         <Button variant="outline" size="sm" className="w-full">
                           <User size={14} className="mr-2" />
@@ -378,24 +438,44 @@ const UserDashboard = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <label className="text-sm font-medium">First Name</label>
-                            <Input value={userName} onChange={(e) => setUserName(e.target.value)} />
+                            <Input 
+                              value={userName.split(' ')[0] || userName} 
+                              onChange={(e) => setUserName(prev => {
+                                const parts = prev.split(' ');
+                                if (parts.length > 1) {
+                                  return `${e.target.value} ${parts.slice(1).join(' ')}`;
+                                }
+                                return e.target.value;
+                              })} 
+                            />
                           </div>
                           <div className="space-y-2">
                             <label className="text-sm font-medium">Last Name</label>
-                            <Input defaultValue="Smith" />
+                            <Input 
+                              value={userName.split(' ').slice(1).join(' ') || ''} 
+                              onChange={(e) => setUserName(prev => {
+                                const parts = prev.split(' ');
+                                return `${parts[0] || ''} ${e.target.value}`;
+                              })}
+                            />
                           </div>
                           <div className="space-y-2">
                             <label className="text-sm font-medium">Email</label>
-                            <Input defaultValue="john@example.com" />
+                            <Input 
+                              value={userEmail} 
+                              onChange={(e) => setUserEmail(e.target.value)}
+                              className="bg-gray-100"
+                              readOnly 
+                            />
                           </div>
                           <div className="space-y-2">
                             <label className="text-sm font-medium">Phone</label>
-                            <Input defaultValue="+1 (555) 123-4567" />
+                            <Input placeholder="Enter your phone number" />
                           </div>
                         </div>
                         
                         <div className="pt-4 flex justify-end">
-                          <Button onClick={() => toast.success("Profile updated successfully")}>
+                          <Button onClick={updateUserProfile}>
                             Save Changes
                           </Button>
                         </div>
