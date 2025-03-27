@@ -144,6 +144,26 @@ export const leadsService = {
     return leads.filter(lead => lead.isGuest === false);
   },
 
+  // Get leads for a user (used by components)
+  getLeadsForUser: async (userId?: string): Promise<Lead[]> => {
+    await delay(600);
+    return leads.filter(lead => lead.email === userId && !lead.isGuest);
+  },
+
+  // Get leads for a business (used by components)
+  getLeadsForBusiness: async (businessId?: string): Promise<Lead[]> => {
+    await delay(600);
+    // Placeholder implementation - in a real app would filter by business ID
+    return leads;
+  },
+
+  // Get leads for a team (used by components)
+  getLeadsForTeam: async (teamId?: string): Promise<Lead[]> => {
+    await delay(600);
+    // Placeholder implementation - in a real app would filter by team ID
+    return leads;
+  },
+
   // Get lead by ID
   getLead: async (id: string): Promise<Lead | undefined> => {
     await delay(300);
@@ -151,8 +171,9 @@ export const leadsService = {
   },
 
   // Update lead status
-  updateLeadStatus: async (id: string, status: LeadStatus): Promise<Lead | undefined> => {
+  updateLeadStatus: async (leadId: string | number, status: LeadStatus): Promise<Lead | undefined> => {
     await delay(500);
+    const id = typeof leadId === 'number' ? String(leadId) : leadId;
     const index = leads.findIndex(lead => lead.id === id);
     if (index !== -1) {
       leads[index] = { ...leads[index], status };

@@ -7,6 +7,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Mail, Lock, User } from 'lucide-react';
 
+// Define admin credentials
+const ADMIN_EMAIL = "admin@leadflow.com";
+const ADMIN_PASSWORD = "admin123";
+
 interface AuthFormProps {
   type: 'login' | 'signup';
 }
@@ -72,31 +76,48 @@ const AuthForm = ({ type }: AuthFormProps) => {
         // Redirect to login page after signup
         navigate('/login');
       } else {
-        // Login process
-        const storedEmail = localStorage.getItem('userEmail');
-        const storedPassword = localStorage.getItem('userPassword');
-        
-        if (storedEmail === formData.email && storedPassword === formData.password) {
-          const userName = localStorage.getItem('userName');
-          
-          // Success handling
+        // Check if admin credentials
+        if (formData.email === ADMIN_EMAIL && formData.password === ADMIN_PASSWORD) {
+          // Admin login successful
           toast({
-            title: "Logged in successfully",
-            description: "Welcome back to LeadFlow",
+            title: "Admin logged in successfully",
+            description: "Welcome to the admin dashboard",
           });
           
-          // Determine redirect based on role
-          const isAdmin = formData.email.includes('admin');
-          
-          // Pass user data through navigation state
-          navigate(isAdmin ? '/admin-dashboard' : '/user-dashboard', {
+          // Navigate to admin dashboard
+          navigate('/admin-dashboard', {
             state: {
-              userName: userName,
-              userEmail: formData.email
+              userName: "Admin",
+              userEmail: formData.email,
+              isAdmin: true
             }
           });
-        } else {
-          throw new Error('Invalid credentials');
+        }
+        // Regular user login process
+        else {
+          const storedEmail = localStorage.getItem('userEmail');
+          const storedPassword = localStorage.getItem('userPassword');
+          
+          if (storedEmail === formData.email && storedPassword === formData.password) {
+            const userName = localStorage.getItem('userName');
+            
+            // Success handling
+            toast({
+              title: "Logged in successfully",
+              description: "Welcome back to LeadFlow",
+            });
+            
+            // Navigate to user dashboard
+            navigate('/user-dashboard', {
+              state: {
+                userName: userName,
+                userEmail: formData.email,
+                isAdmin: false
+              }
+            });
+          } else {
+            throw new Error('Invalid credentials');
+          }
         }
       }
     } catch (error) {
