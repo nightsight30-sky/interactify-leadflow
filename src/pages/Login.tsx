@@ -2,8 +2,6 @@
 import { Link } from 'react-router-dom';
 import AuthForm from '@/components/AuthForm';
 import { ArrowLeft } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon } from 'lucide-react';
 
 const Login = () => {
   return (
@@ -22,13 +20,6 @@ const Login = () => {
           </h1>
         </Link>
       </div>
-      
-      <Alert className="mb-6 max-w-md bg-blue-50">
-        <InfoIcon className="h-4 w-4 text-primary" />
-        <AlertDescription className="text-sm text-gray-700">
-          Admin access: Use <span className="font-medium">admin@leadflow.com</span> with password <span className="font-medium">admin123</span>
-        </AlertDescription>
-      </Alert>
       
       <AuthForm type="login" />
       

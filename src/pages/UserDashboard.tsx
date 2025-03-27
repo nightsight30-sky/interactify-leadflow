@@ -14,6 +14,7 @@ import NewLeadForm from '@/components/NewLeadForm';
 import { leadsService, Lead } from '@/utils/leadsService';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import MessageCenter from '@/components/messages/MessageCenter';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -406,6 +407,10 @@ const UserDashboard = () => {
               </>
             )}
             
+            {activeMainTab === 'messages' && (
+              <MessageCenter />
+            )}
+            
             {activeMainTab === 'profile' && (
               <div className="space-y-6">
                 <div>
@@ -521,15 +526,13 @@ const UserDashboard = () => {
               </div>
             )}
             
-            {(activeMainTab !== 'dashboard' && activeMainTab !== 'profile') && (
+            {(activeMainTab !== 'dashboard' && activeMainTab !== 'profile' && activeMainTab !== 'messages') && (
               <div className="flex flex-col items-center justify-center py-12">
                 <div className="bg-primary/10 p-6 rounded-full mb-4">
-                  {activeMainTab === 'messages' && <MessageSquare size={48} className="text-primary" />}
                   {activeMainTab === 'email' && <Mail size={48} className="text-primary" />}
                   {activeMainTab === 'settings' && <Settings size={48} className="text-primary" />}
                 </div>
                 <h2 className="text-2xl font-bold mb-2">
-                  {activeMainTab === 'messages' && 'Message Center'}
                   {activeMainTab === 'email' && 'Email History'}
                   {activeMainTab === 'settings' && 'Account Settings'}
                 </h2>
