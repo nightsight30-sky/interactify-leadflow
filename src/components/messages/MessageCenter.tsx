@@ -16,10 +16,12 @@ import {
   Send,
   Archive,
   User,
-  UserCheck
+  UserCheck,
+  RefreshCcw
 } from 'lucide-react';
 import MessageList from './MessageList';
 import MessagePreview from './MessagePreview';
+import { emailService } from '@/utils/emailService';
 
 // Helper to filter leads with their messages (request content)
 const filterLeadsByType = (leads: Lead[], type: string) => {
@@ -33,7 +35,12 @@ const filterLeadsByType = (leads: Lead[], type: string) => {
   }
 };
 
-const MessageCenter = () => {
+interface MessageCenterProps {
+  isUserDashboard?: boolean;
+  userEmail?: string;
+}
+
+const MessageCenter = ({ isUserDashboard = false, userEmail }: MessageCenterProps) => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -44,7 +51,16 @@ const MessageCenter = () => {
   const fetchLeads = async () => {
     setIsLoading(true);
     try {
-      const allLeads = await leadsService.getLeads();
+      let allLeads: Lead[];
+      
+      if (isUserDashboard && userEmail) {
+        // If in user dashboard, only fetch leads for this user
+        allLeads = await leadsService.getUserLeads(userEmail);
+      } else {
+        // If in admin dashboard, fetch all leads
+        allLeads = await leadsService.getLeads();
+      }
+      
       setLeads(allLeads);
       setFilteredLeads(allLeads);
       
@@ -62,7 +78,7 @@ const MessageCenter = () => {
   
   useEffect(() => {
     fetchLeads();
-  }, []);
+  }, [isUserDashboard, userEmail]);
   
   useEffect(() => {
     const typeFiltered = filterLeadsByType(leads, messageType);
@@ -86,17 +102,29 @@ const MessageCenter = () => {
     setSelectedLead(lead);
   };
   
-  const handleSendMessage = (message: string) => {
+  const handleSendMessage = async (message: string) => {
     if (!selectedLead) return;
     
-    toast.success(`Message sent to ${selectedLead.name}`);
+    try {
+      // Log the interaction with the lead
+      await leadsService.addInteraction(selectedLead.id, message);
+      
+      // Refresh leads to get updated interaction count
+      fetchLeads();
+    } catch (error) {
+      console.error('Error recording message interaction:', error);
+    }
   };
   
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold mb-1">Message Center</h2>
-        <p className="text-gray-500">Manage and respond to all lead messages</p>
+        <p className="text-gray-500">
+          {isUserDashboard 
+            ? "View and respond to messages from our team" 
+            : "Manage and respond to all lead messages"}
+        </p>
       </div>
       
       <div className="flex flex-col space-y-4 h-[calc(100vh-300px)] min-h-[500px]">
@@ -111,30 +139,32 @@ const MessageCenter = () => {
             />
           </div>
           
-          <Tabs 
-            defaultValue="all" 
-            value={messageType} 
-            onValueChange={setMessageType}
-            className="w-auto"
-          >
-            <TabsList>
-              <TabsTrigger value="all">
-                <Inbox size={16} className="mr-2" />
-                All
-              </TabsTrigger>
-              <TabsTrigger value="registered">
-                <UserCheck size={16} className="mr-2" />
-                Registered
-              </TabsTrigger>
-              <TabsTrigger value="guest">
-                <User size={16} className="mr-2" />
-                Guest
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {!isUserDashboard && (
+            <Tabs 
+              defaultValue="all" 
+              value={messageType} 
+              onValueChange={setMessageType}
+              className="w-auto"
+            >
+              <TabsList>
+                <TabsTrigger value="all">
+                  <Inbox size={16} className="mr-2" />
+                  All
+                </TabsTrigger>
+                <TabsTrigger value="registered">
+                  <UserCheck size={16} className="mr-2" />
+                  Registered
+                </TabsTrigger>
+                <TabsTrigger value="guest">
+                  <User size={16} className="mr-2" />
+                  Guest
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
           
-          <Button variant="outline" size="icon">
-            <Filter size={16} />
+          <Button variant="outline" size="icon" onClick={fetchLeads}>
+            <RefreshCcw size={16} />
           </Button>
         </div>
         
