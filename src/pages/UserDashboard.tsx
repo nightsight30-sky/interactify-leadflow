@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,8 @@ import { LeadStatus, leadsService } from '@/utils/leadsService';
 import LeadCard from '@/components/LeadCard';
 import MessageCenter from '@/components/messages/MessageCenter';
 import { useUser } from '@/context/UserContext';
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 
 const UserDashboard = () => {
   const navigate = useNavigate();

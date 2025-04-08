@@ -93,7 +93,7 @@ const MessagePreview = ({ lead, onSendMessage, isLoading = false }: MessagePrevi
                 lead.status === 'new' ? "default" :
                 lead.status === 'contacted' ? "secondary" : 
                 lead.status === 'qualified' ? "outline" :
-                lead.status === 'converted' ? "success" : "destructive"
+                lead.status === 'converted' ? "default" : "destructive"
               }>
                 {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
               </Badge>
