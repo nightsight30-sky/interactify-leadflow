@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { PlusCircle } from 'lucide-react';
+import { useUser } from '@/context/UserContext';
 
 // Define form schema
 const formSchema = z.object({
@@ -25,6 +26,7 @@ interface NewLeadFormProps {
 
 const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
   const [open, setOpen] = useState(false);
+  const { user } = useUser();
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -35,7 +37,13 @@ const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
   });
   
   const onSubmit = async (data: FormData) => {
-    onLeadAdded(data);
+    // Include the current user's info with the form data
+    const enrichedData = {
+      ...data,
+      name: user?.name || 'Unknown User',
+      email: user?.email || 'unknown@example.com'
+    };
+    onLeadAdded(enrichedData);
     form.reset();
     setOpen(false);
   };

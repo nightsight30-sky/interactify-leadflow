@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { teamService } from "./teamService";
 import { emailService } from "./emailService";
@@ -17,6 +16,7 @@ export interface Lead {
   interactions: number;
   isGuest?: boolean; // Property to identify guest vs logged-in user leads
   assignedTeamMemberId?: string; // ID of the team member assigned to this lead
+  createdById?: string; // ID of the user who created this lead
 }
 
 // Initial mock data
@@ -112,6 +112,14 @@ const getStoredLeads = (): Lead[] => {
 // Save leads to localStorage
 const saveLeads = (leads: Lead[]) => {
   localStorage.setItem('leadflow_leads', JSON.stringify(leads));
+};
+
+// Generate a unique ID that includes user info
+const generateUniqueId = (userEmail?: string): string => {
+  const timestamp = Date.now();
+  const random = Math.floor(Math.random() * 10000);
+  const userPart = userEmail ? userEmail.substring(0, 4).replace(/[@.]/g, '') : 'guest';
+  return `${userPart}-${timestamp}-${random}`;
 };
 
 // Initialize with stored or initial data
@@ -231,8 +239,8 @@ export const leadsService = {
   addLead: async (lead: Omit<Lead, 'id' | 'score' | 'lastActivity' | 'interactions'>, isGuest: boolean = true): Promise<Lead> => {
     await delay(800);
     
-    // Generate random ID
-    const id = Math.random().toString(36).substring(2, 9);
+    // Generate unique ID using the user's email if available
+    const id = generateUniqueId(lead.email);
     
     // Calculate an AI score based on message length and requestType
     let score = Math.floor(Math.random() * 40) + 30; // Base score 30-70
@@ -242,7 +250,6 @@ export const leadsService = {
     score = Math.min(score, 99); // Cap at 99
     
     // Ensure the name is properly set (fixes the issue with registered users)
-    // If it's a registered user (not a guest), use their name consistently
     const newLead: Lead = {
       id,
       ...lead,
@@ -250,7 +257,8 @@ export const leadsService = {
       score,
       lastActivity: 'Just now',
       interactions: 1,
-      isGuest
+      isGuest,
+      createdById: isGuest ? undefined : lead.email // Store the creator's ID (email) for registered users
     };
     
     leads = [newLead, ...leads];
