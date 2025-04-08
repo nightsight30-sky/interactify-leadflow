@@ -1,5 +1,7 @@
 
 import { toast } from "sonner";
+import { teamService } from "./teamService";
+import { emailService } from "./emailService";
 
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
 
@@ -14,6 +16,7 @@ export interface Lead {
   message: string;
   interactions: number;
   isGuest?: boolean; // Property to identify guest vs logged-in user leads
+  assignedTeamMemberId?: string; // ID of the team member assigned to this lead
 }
 
 // Initial mock data
@@ -163,6 +166,18 @@ export const leadsService = {
     // Placeholder implementation - in a real app would filter by team ID
     return leads;
   },
+  
+  // Get leads assigned to a specific team member
+  getLeadsForTeamMember: async (teamMemberId: string): Promise<Lead[]> => {
+    await delay(600);
+    return leads.filter(lead => lead.assignedTeamMemberId === teamMemberId);
+  },
+
+  // Get unassigned leads
+  getUnassignedLeads: async (): Promise<Lead[]> => {
+    await delay(600);
+    return leads.filter(lead => !lead.assignedTeamMemberId);
+  },
 
   // Get lead by ID
   getLead: async (id: string): Promise<Lead | undefined> => {
@@ -175,12 +190,39 @@ export const leadsService = {
     await delay(500);
     const id = typeof leadId === 'number' ? String(leadId) : leadId;
     const index = leads.findIndex(lead => lead.id === id);
+    
     if (index !== -1) {
+      const oldStatus = leads[index].status;
       leads[index] = { ...leads[index], status };
       saveLeads(leads);
+      
+      // Send email notification about status update
+      await emailService.sendStatusUpdateNotification(leads[index], status);
+      
+      // If the lead is converted or lost, and it's assigned to a team member,
+      // automatically assign a new lead to that team member
+      if ((status === 'converted' || status === 'lost') && 
+          leads[index].assignedTeamMemberId && 
+          (oldStatus !== 'converted' && oldStatus !== 'lost')) {
+        
+        const teamMemberId = leads[index].assignedTeamMemberId;
+        
+        // Find a new lead to assign
+        const newLeadsForAssignment = await leadsService.getUnassignedLeads();
+        const newLeadToAssign = newLeadsForAssignment.find(l => 
+          l.status !== 'converted' && 
+          l.status !== 'lost'
+        );
+        
+        if (newLeadToAssign) {
+          await leadsService.assignLeadToTeamMember(newLeadToAssign.id, teamMemberId);
+        }
+      }
+      
       toast.success("Lead status updated successfully");
       return leads[index];
     }
+    
     toast.error("Failed to update lead status");
     return undefined;
   },
@@ -210,6 +252,21 @@ export const leadsService = {
     
     leads = [newLead, ...leads];
     saveLeads(leads);
+    
+    // If this is a new lead and there are team members, try to assign it automatically
+    if (lead.status === 'new') {
+      const availableTeamMember = await teamService.getNextAvailableTeamMember();
+      
+      if (availableTeamMember) {
+        await leadsService.assignLeadToTeamMember(newLead.id, availableTeamMember.id);
+      }
+    }
+    
+    // If it's a guest lead, send welcome email
+    if (isGuest) {
+      await emailService.sendWelcomeEmail(lead.name, lead.email);
+    }
+    
     toast.success("New lead added successfully");
     return newLead;
   },
@@ -229,6 +286,34 @@ export const leadsService = {
       return leads[index];
     }
     toast.error("Failed to record interaction");
+    return undefined;
+  },
+
+  // Assign lead to team member
+  assignLeadToTeamMember: async (leadId: string, teamMemberId: string): Promise<Lead | undefined> => {
+    await delay(600);
+    const index = leads.findIndex(lead => lead.id === leadId);
+    
+    if (index !== -1) {
+      leads[index] = { ...leads[index], assignedTeamMemberId: teamMemberId };
+      saveLeads(leads);
+      
+      // Add the lead ID to the team member's assigned leads
+      await teamService.assignLeadToTeamMember(teamMemberId, leadId);
+      
+      // Get team member name for notification
+      const teamMember = await teamService.getTeamMemberById(teamMemberId);
+      
+      if (teamMember) {
+        // Send email notification about team assignment
+        await emailService.sendTeamAssignmentNotification(leads[index], teamMember.name);
+      }
+      
+      toast.success("Lead assigned to team member");
+      return leads[index];
+    }
+    
+    toast.error("Failed to assign lead");
     return undefined;
   },
 
