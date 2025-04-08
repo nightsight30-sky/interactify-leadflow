@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { SidebarProvider, Sidebar, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
@@ -17,7 +16,12 @@ import {
   MessagesSquare,
   Mail,
   UserCog,
-  LifeBuoy
+  LifeBuoy,
+  ChevronUp,
+  ChevronDown,
+  Calendar,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from "@/hooks/use-toast";
@@ -31,8 +35,8 @@ import LeadCard from '@/components/LeadCard';
 import MessageCenter from '@/components/messages/MessageCenter';
 import AIInsights from '@/components/ai/AIInsights';
 import TeamManagement from '@/components/team/TeamManagement';
+import { Progress } from '@/components/ui/progress';
 
-// We're defining these status options here for the filter
 const statusOptions: { value: LeadStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All Statuses' },
   { value: 'new', label: 'New' },
@@ -47,13 +51,30 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const [activeMenuTab, setActiveMenuTab] = useState<string>('dashboard');
   
-  // For leads filtering
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
   const [guestFilter, setGuestFilter] = useState<boolean | null>(null);
   const [leads, setLeads] = useState<any[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<any[]>([]);
   const [isLoadingLeads, setIsLoadingLeads] = useState(true);
+  
+  const [notifications, setNotifications] = useState([
+    { id: 1, text: "New lead assigned to your team", time: "5 min ago", read: false },
+    { id: 2, text: "Team meeting scheduled for tomorrow", time: "2 hours ago", read: false },
+    { id: 3, text: "Monthly report is ready for review", time: "Yesterday", read: true },
+  ]);
+  
+  const [unreadNotifications, setUnreadNotifications] = useState(2);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [tasksCompleted, setTasksCompleted] = useState(0);
+  const [taskProgress, setTaskProgress] = useState(0);
+  
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [events, setEvents] = useState([
+    { id: 1, title: "Team Meeting", date: "Today, 2:00 PM", priority: "high" },
+    { id: 2, title: "Client Call", date: "Tomorrow, 10:30 AM", priority: "medium" },
+    { id: 3, title: "Strategy Review", date: "Sept 16, 9:00 AM", priority: "low" },
+  ]);
 
   const fetchLeads = async () => {
     setIsLoadingLeads(true);
@@ -61,6 +82,12 @@ const AdminDashboard = () => {
       const allLeads = await leadsService.getLeads();
       setLeads(allLeads);
       setFilteredLeads(allLeads);
+      
+      const completed = allLeads.filter(lead => lead.status === 'converted').length;
+      setTasksCompleted(completed);
+      
+      const progress = Math.floor((completed / allLeads.length) * 100) || 0;
+      setTaskProgress(progress);
     } catch (error) {
       toast({
         title: "Error",
@@ -77,11 +104,9 @@ const AdminDashboard = () => {
     fetchLeads();
   }, []);
 
-  // Filter leads based on search, status and guest criteria
   useEffect(() => {
     let filtered = [...leads];
     
-    // Apply search query filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(lead => 
@@ -92,12 +117,10 @@ const AdminDashboard = () => {
       );
     }
     
-    // Apply status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(lead => lead.status === statusFilter);
     }
     
-    // Apply guest filter
     if (guestFilter !== null) {
       filtered = filtered.filter(lead => lead.isGuest === guestFilter);
     }
@@ -115,6 +138,20 @@ const AdminDashboard = () => {
   
   const handleLeadUpdated = () => {
     fetchLeads();
+  };
+
+  const markNotificationAsRead = (id: number) => {
+    const updatedNotifications = notifications.map(notification => 
+      notification.id === id ? { ...notification, read: true } : notification
+    );
+    setNotifications(updatedNotifications);
+    setUnreadNotifications(updatedNotifications.filter(n => !n.read).length);
+  };
+
+  const markAllNotificationsAsRead = () => {
+    const updatedNotifications = notifications.map(notification => ({ ...notification, read: true }));
+    setNotifications(updatedNotifications);
+    setUnreadNotifications(0);
   };
 
   return (
@@ -226,9 +263,98 @@ const AdminDashboard = () => {
               </div>
 
               <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon">
-                  <Bell className="h-4 w-4" />
-                </Button>
+                <div className="relative">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={() => setShowCalendar(!showCalendar)}
+                  >
+                    <Calendar className="h-4 w-4" />
+                  </Button>
+                  
+                  {showCalendar && (
+                    <Card className="absolute right-0 mt-2 w-80 z-50">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">Upcoming Events</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-2">
+                        <ul className="space-y-2">
+                          {events.map(event => (
+                            <li key={event.id} className="p-2 hover:bg-gray-50 rounded-md cursor-pointer">
+                              <div className="flex items-start">
+                                <div className={`h-3 w-3 rounded-full mt-1.5 mr-2 ${
+                                  event.priority === 'high' ? 'bg-red-500' :
+                                  event.priority === 'medium' ? 'bg-amber-500' :
+                                  'bg-green-500'
+                                }`}></div>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium">{event.title}</p>
+                                  <p className="text-xs text-gray-500">{event.date}</p>
+                                </div>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                      <CardFooter className="py-2 px-2">
+                        <Button variant="ghost" size="sm" className="w-full text-xs">
+                          View Calendar
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  )}
+                </div>
+                
+                <div className="relative">
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setShowNotifications(!showNotifications)}
+                  >
+                    <Bell className="h-4 w-4" />
+                    {unreadNotifications > 0 && (
+                      <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs bg-red-500 text-white rounded-full">
+                        {unreadNotifications}
+                      </span>
+                    )}
+                  </Button>
+                  
+                  {showNotifications && (
+                    <Card className="absolute right-0 mt-2 w-80 z-50">
+                      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                        <CardTitle className="text-sm">Notifications</CardTitle>
+                        <Button variant="ghost" size="sm" onClick={markAllNotificationsAsRead}>
+                          Mark all read
+                        </Button>
+                      </CardHeader>
+                      <CardContent className="p-2">
+                        <ul className="space-y-2">
+                          {notifications.map(notification => (
+                            <li 
+                              key={notification.id} 
+                              className={`p-2 ${notification.read ? 'bg-white' : 'bg-blue-50'} hover:bg-gray-50 rounded-md cursor-pointer`}
+                              onClick={() => markNotificationAsRead(notification.id)}
+                            >
+                              <div className="flex items-start">
+                                <div className={`h-2 w-2 rounded-full mt-1.5 mr-2 ${notification.read ? 'bg-gray-300' : 'bg-blue-500'}`}></div>
+                                <div className="flex-1">
+                                  <p className="text-sm">{notification.text}</p>
+                                  <p className="text-xs text-gray-500">{notification.time}</p>
+                                </div>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                      <CardFooter className="py-2 px-2">
+                        <Button variant="ghost" size="sm" className="w-full text-xs">
+                          View All Notifications
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  )}
+                </div>
+                
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="/placeholder.svg" />
                   <AvatarFallback className="bg-primary text-white">AD</AvatarFallback>
@@ -240,6 +366,93 @@ const AdminDashboard = () => {
           <main className="flex-1 overflow-auto p-6">
             {activeMenuTab === 'dashboard' && (
               <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                    <CardContent className="pt-6">
+                      <div className="flex flex-col">
+                        <div className="flex justify-between items-center mb-2">
+                          <Users className="h-5 w-5 opacity-70" />
+                          <ChevronUp className="h-4 w-4" />
+                        </div>
+                        <div className="text-2xl font-bold">
+                          {leads.length}
+                        </div>
+                        <div className="text-sm opacity-80">
+                          Total Requests
+                        </div>
+                        <div className="text-xs mt-2 flex items-center opacity-80">
+                          <ChevronUp className="h-3 w-3 mr-1" />
+                          <span>12% from last week</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white">
+                    <CardContent className="pt-6">
+                      <div className="flex flex-col">
+                        <div className="flex justify-between items-center mb-2">
+                          <CheckCircle className="h-5 w-5 opacity-70" />
+                          <ChevronUp className="h-4 w-4" />
+                        </div>
+                        <div className="text-2xl font-bold">
+                          {leads.filter(lead => lead.status === 'converted').length}
+                        </div>
+                        <div className="text-sm opacity-80">
+                          Completed
+                        </div>
+                        <div className="text-xs mt-2 flex items-center opacity-80">
+                          <ChevronUp className="h-3 w-3 mr-1" />
+                          <span>8% from last month</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white">
+                    <CardContent className="pt-6">
+                      <div className="flex flex-col">
+                        <div className="flex justify-between items-center mb-2">
+                          <AlertCircle className="h-5 w-5 opacity-70" />
+                          <ChevronDown className="h-4 w-4" />
+                        </div>
+                        <div className="text-2xl font-bold">
+                          {leads.filter(lead => lead.status === 'new').length}
+                        </div>
+                        <div className="text-sm opacity-80">
+                          New Requests
+                        </div>
+                        <div className="text-xs mt-2 flex items-center opacity-80">
+                          <ChevronDown className="h-3 w-3 mr-1" />
+                          <span>3% from yesterday</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex flex-col">
+                        <div className="flex justify-between mb-2">
+                          <span className="text-sm font-medium">Completion Rate</span>
+                          <span className="font-bold text-green-600">{taskProgress}%</span>
+                        </div>
+                        <Progress value={taskProgress} className="h-2 mb-4" />
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="flex flex-col">
+                            <span className="text-gray-500">Completed</span>
+                            <span className="font-bold">{tasksCompleted}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-gray-500">Total</span>
+                            <span className="font-bold">{leads.length}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                
                 <LeadStats />
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -263,9 +476,15 @@ const AdminDashboard = () => {
                       ) : (
                         <div className="space-y-4">
                           {leads.slice(0, 3).map(lead => (
-                            <div key={lead.id} className="flex items-center space-x-4 p-2 hover:bg-gray-50 rounded-md transition-colors">
+                            <div key={lead.id} className="flex items-center space-x-4 p-2 hover:bg-gray-50 rounded-md transition-colors cursor-pointer">
                               <Avatar className="h-10 w-10">
-                                <AvatarFallback className="bg-primary/10 text-primary">
+                                <AvatarFallback className={`${
+                                  lead.status === 'new' ? 'bg-blue-100 text-blue-600' :
+                                  lead.status === 'contacted' ? 'bg-purple-100 text-purple-600' :
+                                  lead.status === 'qualified' ? 'bg-amber-100 text-amber-600' :
+                                  lead.status === 'converted' ? 'bg-green-100 text-green-600' :
+                                  'bg-red-100 text-red-600'
+                                }`}>
                                   {lead.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>

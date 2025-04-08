@@ -241,9 +241,12 @@ export const leadsService = {
     if (lead.requestType === 'Product Inquiry') score += 10;
     score = Math.min(score, 99); // Cap at 99
     
+    // Ensure the name is properly set (fixes the issue with registered users)
+    // If it's a registered user (not a guest), use their name consistently
     const newLead: Lead = {
       id,
       ...lead,
+      name: lead.name || 'Anonymous User', // Ensure name is never empty
       score,
       lastActivity: 'Just now',
       interactions: 1,
@@ -264,10 +267,10 @@ export const leadsService = {
     
     // If it's a guest lead, send welcome email
     if (isGuest) {
-      await emailService.sendWelcomeEmail(lead.name, lead.email);
+      await emailService.sendWelcomeEmail(newLead.name, newLead.email);
     }
     
-    toast.success("New lead added successfully");
+    toast.success("New request added successfully");
     return newLead;
   },
 
