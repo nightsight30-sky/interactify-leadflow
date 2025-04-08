@@ -12,7 +12,8 @@ import {
   LogOut,
   BarChartBig,
   Mail,
-  Settings
+  Settings,
+  PlusCircle
 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { LeadStatus, leadsService } from '@/utils/leadsService';
@@ -21,6 +22,7 @@ import MessageCenter from '@/components/messages/MessageCenter';
 import { useUser } from '@/context/UserContext';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import NewLeadForm from '@/components/NewLeadForm';
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -63,6 +65,34 @@ const UserDashboard = () => {
 
   const handleLeadUpdated = () => {
     fetchLeads();
+  };
+
+  const handleLeadAdded = async (data: any) => {
+    try {
+      // Create a new lead with the form data
+      await leadsService.addLead({
+        name: user?.name || 'User',
+        email: userEmail,
+        requestType: data.requestType,
+        message: data.message,
+        status: 'new'
+      }, false); // false means it's a registered user's lead, not a guest
+      
+      toast({
+        title: "Success",
+        description: "Your request has been submitted successfully",
+      });
+      
+      // Refresh leads data
+      fetchLeads();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit your request",
+        variant: "destructive",
+      });
+      console.error("Error submitting request:", error);
+    }
   };
 
   return (
@@ -108,7 +138,7 @@ const UserDashboard = () => {
                       onClick={() => setActiveTab('leads')}
                     >
                       <Users className="mr-2 h-4 w-4" />
-                      My Leads
+                      My Requests
                     </Button>
                     
                     <Button
@@ -170,7 +200,39 @@ const UserDashboard = () => {
                       <CardTitle>Dashboard</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      Welcome to your dashboard!
+                      <p className="mb-6">Welcome to your dashboard! Here you can manage your requests and communications.</p>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Card className="bg-blue-50">
+                          <CardContent className="pt-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h3 className="text-lg font-medium">{leads.length}</h3>
+                                <p className="text-sm text-muted-foreground">Active Requests</p>
+                              </div>
+                              <Users className="h-8 w-8 text-blue-500" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card className="bg-emerald-50">
+                          <CardContent className="pt-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h3 className="text-lg font-medium">
+                                  {leads.filter(lead => lead.status === 'converted').length}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">Completed Requests</p>
+                              </div>
+                              <BarChartBig className="h-8 w-8 text-emerald-500" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                      
+                      <div className="mt-6">
+                        <NewLeadForm onLeadAdded={handleLeadAdded} />
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -178,13 +240,17 @@ const UserDashboard = () => {
               
               {activeTab === 'leads' && (
                 <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold">My Requests</h2>
+                    <NewLeadForm onLeadAdded={handleLeadAdded} />
+                  </div>
+                  
                   <Card>
-                    <CardHeader>
-                      <CardTitle>My Leads</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                    <CardContent className="pt-6">
                       {isLoadingLeads ? (
-                        <div>Loading leads...</div>
+                        <div className="flex justify-center py-8">
+                          <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+                        </div>
                       ) : leads.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                           {leads.map(lead => (
@@ -197,7 +263,13 @@ const UserDashboard = () => {
                           ))}
                         </div>
                       ) : (
-                        <div>No leads found.</div>
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">No requests found. Create your first request!</p>
+                          <Button className="mt-4" onClick={() => setActiveTab('dashboard')}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            New Request
+                          </Button>
+                        </div>
                       )}
                     </CardContent>
                   </Card>
@@ -214,7 +286,20 @@ const UserDashboard = () => {
                     <CardTitle>Profile</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    User profile information.
+                    <div className="space-y-4">
+                      <div className="flex flex-col space-y-1.5">
+                        <h3 className="text-sm font-medium text-muted-foreground">Name</h3>
+                        <p>{user?.name || 'Not provided'}</p>
+                      </div>
+                      <div className="flex flex-col space-y-1.5">
+                        <h3 className="text-sm font-medium text-muted-foreground">Email</h3>
+                        <p>{user?.email || 'Not provided'}</p>
+                      </div>
+                      <div className="flex flex-col space-y-1.5">
+                        <h3 className="text-sm font-medium text-muted-foreground">Role</h3>
+                        <p>{user?.role || 'User'}</p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               )}
