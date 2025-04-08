@@ -131,6 +131,140 @@ const TeamManagement = () => {
     }
   };
   
+  // The main content to display based on active tab
+  const renderTabContent = () => {
+    if (activeTab === 'team') {
+      return (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium">Unassigned Leads</h3>
+            <div className="flex space-x-2">
+              <Button size="sm" variant="outline" onClick={fetchUnassignedLeads}>
+                <RefreshCcw className="h-4 w-4 mr-1" />
+                Refresh
+              </Button>
+              <Button size="sm" onClick={autoAssignLeads}>
+                <BarChart className="h-4 w-4 mr-1" />
+                Auto-Assign All
+              </Button>
+            </div>
+          </div>
+          
+          {isLoadingLeads ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+                      <div className="space-y-2 flex-1">
+                        <div className="h-4 bg-gray-200 rounded w-24"></div>
+                        <div className="h-3 bg-gray-200 rounded w-32"></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : unassignedLeads.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {unassignedLeads.map(lead => (
+                <Card key={lead.id} className="border-dashed hover:border-primary transition-colors">
+                  <CardContent className="p-0">
+                    <LeadCard 
+                      lead={lead}
+                      isAdmin={true}
+                      onLeadUpdated={handleLeadUpdated}
+                    />
+                    
+                    {selectedTeamMember && (
+                      <div className="p-3 pt-0 border-t">
+                        <Button 
+                          onClick={() => handleAssignLead(lead.id)}
+                          className="w-full"
+                          size="sm"
+                        >
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Assign to {selectedTeamMember.name}
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 border rounded-lg bg-gray-50">
+              <p className="text-gray-500 mb-2">No unassigned leads</p>
+              <p className="text-sm text-gray-400">
+                All leads have been assigned to team members
+              </p>
+            </div>
+          )}
+        </div>
+      );
+    } else if (activeTab === 'assigned' && selectedTeamMember) {
+      return (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-medium">{selectedTeamMember.name}'s Leads</h3>
+            <Button size="sm" variant="outline" onClick={() => {
+              if (selectedTeamMember) fetchAssignedLeads(selectedTeamMember.id);
+            }}>
+              <RefreshCcw className="h-4 w-4 mr-1" />
+              Refresh
+            </Button>
+          </div>
+          
+          {isLoadingAssigned ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+                      <div className="space-y-2 flex-1">
+                        <div className="h-4 bg-gray-200 rounded w-24"></div>
+                        <div className="h-3 bg-gray-200 rounded w-32"></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : assignedLeads.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {assignedLeads.map(lead => (
+                <Card key={lead.id}>
+                  <CardContent className="p-0">
+                    <LeadCard 
+                      lead={lead}
+                      isAdmin={true}
+                      onLeadUpdated={handleLeadUpdated}
+                    />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 border rounded-lg bg-gray-50">
+              <p className="text-gray-500 mb-2">No assigned leads for this team member</p>
+              <p className="text-sm text-gray-400">
+                Use the Unassigned Leads tab to assign leads
+              </p>
+            </div>
+          )}
+        </div>
+      );
+    } else {
+      return (
+        <div className="text-center py-12 border rounded-lg bg-gray-50">
+          <p className="text-gray-500">Select a team member to view their assigned leads</p>
+        </div>
+      );
+    }
+  };
+  
   return (
     <div className="space-y-6">
       <div>
@@ -173,137 +307,16 @@ const TeamManagement = () => {
                     {selectedTeamMember ? `${selectedTeamMember.name}'s Leads` : 'Assigned Leads'}
                   </TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="team" className="mt-4">
+                  {activeTab === 'team' && renderTabContent()}
+                </TabsContent>
+                
+                <TabsContent value="assigned" className="mt-4">
+                  {activeTab === 'assigned' && renderTabContent()}
+                </TabsContent>
               </Tabs>
             </CardHeader>
-            
-            <CardContent className="pt-4">
-              <TabsContent value="team" className="mt-0">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-medium">Unassigned Leads</h3>
-                  <div className="flex space-x-2">
-                    <Button size="sm" variant="outline" onClick={fetchUnassignedLeads}>
-                      <RefreshCcw className="h-4 w-4 mr-1" />
-                      Refresh
-                    </Button>
-                    <Button size="sm" onClick={autoAssignLeads}>
-                      <BarChart className="h-4 w-4 mr-1" />
-                      Auto-Assign All
-                    </Button>
-                  </div>
-                </div>
-                
-                {isLoadingLeads ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[1, 2].map((i) => (
-                      <Card key={i} className="animate-pulse">
-                        <CardContent className="p-4">
-                          <div className="flex items-center space-x-4">
-                            <div className="rounded-full bg-gray-200 h-10 w-10"></div>
-                            <div className="space-y-2 flex-1">
-                              <div className="h-4 bg-gray-200 rounded w-24"></div>
-                              <div className="h-3 bg-gray-200 rounded w-32"></div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : unassignedLeads.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {unassignedLeads.map(lead => (
-                      <Card key={lead.id} className="border-dashed hover:border-primary transition-colors">
-                        <CardContent className="p-0">
-                          <LeadCard 
-                            lead={lead}
-                            isAdmin={true}
-                            onLeadUpdated={handleLeadUpdated}
-                          />
-                          
-                          {selectedTeamMember && (
-                            <div className="p-3 pt-0 border-t">
-                              <Button 
-                                onClick={() => handleAssignLead(lead.id)}
-                                className="w-full"
-                                size="sm"
-                              >
-                                <UserPlus className="h-4 w-4 mr-2" />
-                                Assign to {selectedTeamMember.name}
-                              </Button>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 border rounded-lg bg-gray-50">
-                    <p className="text-gray-500 mb-2">No unassigned leads</p>
-                    <p className="text-sm text-gray-400">
-                      All leads have been assigned to team members
-                    </p>
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="assigned" className="mt-0">
-                {selectedTeamMember ? (
-                  <>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-medium">{selectedTeamMember.name}'s Leads</h3>
-                      <Button size="sm" variant="outline" onClick={() => {
-                        if (selectedTeamMember) fetchAssignedLeads(selectedTeamMember.id);
-                      }}>
-                        <RefreshCcw className="h-4 w-4 mr-1" />
-                        Refresh
-                      </Button>
-                    </div>
-                    
-                    {isLoadingAssigned ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {[1, 2].map((i) => (
-                          <Card key={i} className="animate-pulse">
-                            <CardContent className="p-4">
-                              <div className="flex items-center space-x-4">
-                                <div className="rounded-full bg-gray-200 h-10 w-10"></div>
-                                <div className="space-y-2 flex-1">
-                                  <div className="h-4 bg-gray-200 rounded w-24"></div>
-                                  <div className="h-3 bg-gray-200 rounded w-32"></div>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : assignedLeads.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {assignedLeads.map(lead => (
-                          <Card key={lead.id}>
-                            <CardContent className="p-0">
-                              <LeadCard 
-                                lead={lead}
-                                isAdmin={true}
-                                onLeadUpdated={handleLeadUpdated}
-                              />
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12 border rounded-lg bg-gray-50">
-                        <p className="text-gray-500 mb-2">No assigned leads for this team member</p>
-                        <p className="text-sm text-gray-400">
-                          Use the Unassigned Leads tab to assign leads
-                        </p>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-center py-12 border rounded-lg bg-gray-50">
-                    <p className="text-gray-500">Select a team member to view their assigned leads</p>
-                  </div>
-                )}
-              </TabsContent>
-            </CardContent>
           </Card>
         </div>
       </div>
