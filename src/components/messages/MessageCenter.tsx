@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,6 +54,7 @@ const MessageCenter = ({ isUserDashboard = false, userEmail }: MessageCenterProp
       
       if (isUserDashboard && userEmail) {
         // If in user dashboard, only fetch leads for this user
+        // We should get all leads related to this user (both created by them and messages to them)
         allLeads = await leadsService.getUserLeads(userEmail);
       } else {
         // If in admin dashboard, fetch all leads

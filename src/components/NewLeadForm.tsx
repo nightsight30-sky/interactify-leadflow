@@ -21,7 +21,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 interface NewLeadFormProps {
-  onLeadAdded: (data: FormData) => void;
+  onLeadAdded: (data: FormData & { name: string, email: string }) => void;
 }
 
 const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
@@ -43,6 +43,7 @@ const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
       name: user?.name || 'Unknown User',
       email: user?.email || 'unknown@example.com'
     };
+    
     onLeadAdded(enrichedData);
     form.reset();
     setOpen(false);
