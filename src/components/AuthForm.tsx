@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Mail, Lock, User } from 'lucide-react';
+import { useUser } from '@/context/UserContext';
 
 // Define admin credentials
 const ADMIN_EMAIL = "admin@leadflow.com";
@@ -18,6 +19,7 @@ interface AuthFormProps {
 const AuthForm = ({ type }: AuthFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -78,6 +80,14 @@ const AuthForm = ({ type }: AuthFormProps) => {
       } else {
         // Check if admin credentials
         if (formData.email === ADMIN_EMAIL && formData.password === ADMIN_PASSWORD) {
+          // Store user data in UserContext
+          login({
+            id: 'admin',
+            name: 'Admin',
+            email: formData.email,
+            role: 'admin'
+          });
+          
           // Admin login successful
           toast({
             title: "Admin logged in successfully",
@@ -85,21 +95,22 @@ const AuthForm = ({ type }: AuthFormProps) => {
           });
           
           // Navigate to admin dashboard
-          navigate('/admin-dashboard', {
-            state: {
-              userName: "Admin",
-              userEmail: formData.email,
-              isAdmin: true
-            }
-          });
+          navigate('/admin-dashboard');
         }
         // Regular user login process
         else {
           const storedEmail = localStorage.getItem('userEmail');
           const storedPassword = localStorage.getItem('userPassword');
+          const userName = localStorage.getItem('userName');
           
           if (storedEmail === formData.email && storedPassword === formData.password) {
-            const userName = localStorage.getItem('userName');
+            // Store user data in UserContext
+            login({
+              id: formData.email,
+              name: userName || 'User',
+              email: formData.email,
+              role: 'user'
+            });
             
             // Success handling
             toast({
@@ -108,13 +119,7 @@ const AuthForm = ({ type }: AuthFormProps) => {
             });
             
             // Navigate to user dashboard
-            navigate('/user-dashboard', {
-              state: {
-                userName: userName,
-                userEmail: formData.email,
-                isAdmin: false
-              }
-            });
+            navigate('/user-dashboard');
           } else {
             throw new Error('Invalid credentials');
           }

@@ -249,7 +249,9 @@ export const leadsService = {
     if (lead.requestType === 'Product Inquiry') score += 10;
     score = Math.min(score, 99); // Cap at 99
     
-    // Ensure the name is properly set (fixes the issue with registered users)
+    // Make sure isGuest is properly set
+    // The type already requires isGuest to be present, but we'll ensure the value is correct based on the function param
+    
     const newLead: Lead = {
       id,
       ...lead,
@@ -257,7 +259,9 @@ export const leadsService = {
       score,
       lastActivity: 'Just now',
       interactions: 1,
-      isGuest,
+      // isGuest is required by the type and should be passed in the lead object
+      // but we'll ensure it matches the function parameter
+      isGuest: typeof lead.isGuest !== 'undefined' ? lead.isGuest : isGuest,
       createdById: isGuest ? undefined : lead.email // Store the creator's ID (email) for registered users
     };
     

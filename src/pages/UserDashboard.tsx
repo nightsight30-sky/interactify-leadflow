@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -102,7 +101,8 @@ const UserDashboard = () => {
         email: userEmail,
         requestType: data.requestType,
         message: data.message,
-        status: 'new'
+        status: 'new',
+        isGuest: false
       }, false); // false means it's a registered user's lead, not a guest
       
       toast({
@@ -289,7 +289,7 @@ const UserDashboard = () => {
               {activeTab === 'dashboard' && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold">Welcome, {user?.name}</h1>
+                    <h1 className="text-2xl font-bold">Welcome, {user?.name || 'User'}</h1>
                     <Button 
                       variant="default"
                       onClick={() => setShowNewRequestForm(true)}

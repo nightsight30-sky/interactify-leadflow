@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 // Define user type
 type User = {
@@ -23,6 +23,19 @@ export const UserProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     const storedUser = localStorage.getItem('leadflow_user');
     return storedUser ? JSON.parse(storedUser) : null;
   });
+
+  // Effect to monitor local storage changes (helps with multiple tabs)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'leadflow_user') {
+        const updatedUser = e.newValue ? JSON.parse(e.newValue) : null;
+        setUser(updatedUser);
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const login = (userData: User) => {
     localStorage.setItem('leadflow_user', JSON.stringify(userData));
