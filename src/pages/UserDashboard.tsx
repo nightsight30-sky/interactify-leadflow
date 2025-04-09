@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -102,7 +101,9 @@ const UserDashboard = () => {
         email: userEmail,
         requestType: data.requestType,
         message: data.message,
-        status: 'new'
+        status: 'new',
+        createdBy: user?.name, // Add creator's name
+        createdById: userEmail // Add creator's email ID
       }, false); // false means it's a registered user's lead, not a guest
       
       toast({

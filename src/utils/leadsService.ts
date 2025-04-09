@@ -1,141 +1,155 @@
-import { toast } from "sonner";
-import { teamService } from "./teamService";
-import { emailService } from "./emailService";
 
+// Simulated delay function
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Types
 export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
 
 export interface Lead {
   id: string;
   name: string;
   email: string;
-  score: number;
-  status: LeadStatus;
-  lastActivity: string;
   requestType: string;
   message: string;
+  status: LeadStatus;
+  lastActivity: string;
+  score: number;
+  assignedTo?: string;
+  createdBy?: string;
+  createdById?: string;
+  isGuest: boolean;
   interactions: number;
-  isGuest?: boolean; // Property to identify guest vs logged-in user leads
-  assignedTeamMemberId?: string; // ID of the team member assigned to this lead
-  createdById?: string; // ID of the user who created this lead
+  notes?: string[];
+  createdAt: Date;
 }
 
-// Initial mock data
-const initialLeads: Lead[] = [
+// Sample data
+let leads: Lead[] = [
   {
-    id: '1',
-    name: 'John Smith',
+    id: 'lead-001',
+    name: 'John Doe',
     email: 'john@example.com',
-    score: 85,
-    status: 'qualified',
+    requestType: 'Demo Request',
+    message: 'I would like to see a demo of your product.',
+    status: 'new',
     lastActivity: '2 days ago',
-    requestType: 'Product Inquiry',
-    message: 'I\'m interested in your AI lead scoring system. Can you tell me more about the pricing?',
-    interactions: 8,
-    isGuest: false
+    score: 75,
+    assignedTo: 'Emily Johnson',
+    isGuest: false,
+    interactions: 0,
+    createdAt: new Date('2024-03-01')
   },
   {
-    id: '2',
-    name: 'Emily Johnson',
-    email: 'emily@example.com',
-    score: 72,
-    status: 'contacted',
-    lastActivity: '5 days ago',
-    requestType: 'Demo Request',
-    message: 'We\'re looking for a lead management system for our sales team of 15 people. Would like to see how your platform works.',
-    interactions: 3,
-    isGuest: true
-  },
-  {
-    id: '3',
-    name: 'Michael Brown',
-    email: 'michael@example.com',
-    score: 45,
-    status: 'new',
-    lastActivity: '1 week ago',
-    requestType: 'Support',
-    message: 'Having some questions about the WhatsApp integration. How does it work with our existing system?',
-    interactions: 1,
-    isGuest: true
-  },
-  {
-    id: '4',
-    name: 'Sarah Wilson',
-    email: 'sarah@example.com',
-    score: 92,
-    status: 'qualified',
-    lastActivity: '1 day ago',
-    requestType: 'Demo Request',
-    message: 'Our marketing team is looking for a new lead management solution that integrates with our CRM. Would like to see a demo.',
-    interactions: 5,
-    isGuest: false
-  },
-  {
-    id: '5',
-    name: 'David Lee',
-    email: 'david@example.com',
-    score: 31,
-    status: 'new',
-    lastActivity: '3 days ago',
+    id: 'lead-002',
+    name: 'Alice Smith',
+    email: 'alice@example.com',
     requestType: 'Pricing',
-    message: 'How much does your basic plan cost? We\'re a small business with about 5 sales reps.',
+    message: 'Can you provide more information about your pricing?',
+    status: 'contacted',
+    lastActivity: '1 week ago',
+    score: 60,
+    assignedTo: 'Mike Wilson',
+    isGuest: false,
     interactions: 2,
-    isGuest: true
+    notes: ['Sent follow-up email', 'Scheduled a call'],
+    createdAt: new Date('2024-03-10')
   },
   {
-    id: '6',
-    name: 'Jessica Chen',
-    email: 'jessica@example.com',
-    score: 78,
-    status: 'contacted',
-    lastActivity: '4 days ago',
-    requestType: 'Product Inquiry',
-    message: 'Does your platform integrate with Salesforce? We need a solution that works with our existing tech stack.',
+    id: 'lead-003',
+    name: 'Robert Johnson',
+    email: 'robert@example.com',
+    requestType: 'Support',
+    message: 'I need help with setting up the software.',
+    status: 'qualified',
+    lastActivity: '3 days ago',
+    score: 85,
+    assignedTo: 'Sarah Brown',
+    isGuest: true,
     interactions: 4,
-    isGuest: false
+    notes: ['Provided setup guide', 'Requested more information'],
+    createdAt: new Date('2024-03-15')
   },
+  {
+    id: 'lead-004',
+    name: 'Emma Davis',
+    email: 'emma@example.com',
+    requestType: 'Partnership',
+    message: 'We are interested in exploring partnership opportunities.',
+    status: 'converted',
+    lastActivity: '5 days ago',
+    score: 95,
+    assignedTo: 'Emily Johnson',
+    isGuest: false,
+    interactions: 8,
+    notes: ['Meeting scheduled for next week', 'Sent partnership details'],
+    createdAt: new Date('2024-03-05')
+  },
+  {
+    id: 'lead-005',
+    name: 'Daniel Wilson',
+    email: 'daniel@example.com',
+    requestType: 'Product Inquiry',
+    message: 'I want to know more about your product features.',
+    status: 'lost',
+    lastActivity: '2 weeks ago',
+    score: 40,
+    assignedTo: 'Mike Wilson',
+    isGuest: true,
+    interactions: 3,
+    notes: ['No response to follow-up calls', 'Chose competitor product'],
+    createdAt: new Date('2024-02-20')
+  }
 ];
 
-// Use localStorage to persist leads data
-const getStoredLeads = (): Lead[] => {
-  const storedLeads = localStorage.getItem('leadflow_leads');
-  if (storedLeads) {
-    try {
-      return JSON.parse(storedLeads);
-    } catch (error) {
-      console.error('Error parsing stored leads:', error);
-      return [...initialLeads];
+// Generate a unique ID
+const generateUniqueId = (email: string = '') => {
+  const timestamp = Date.now().toString();
+  const randomPart = Math.random().toString(36).substring(2, 8);
+  const userPart = email ? email.split('@')[0].substring(0, 5) : '';
+  return `lead-${userPart}-${randomPart}-${timestamp.substring(timestamp.length - 4)}`;
+};
+
+// Format the date
+const formatDate = (date: Date): string => {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) {
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    if (diffHours === 0) {
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      if (diffMinutes < 5) return 'Just now';
+      return `${diffMinutes} minutes ago`;
     }
+    return `${diffHours} hours ago`;
+  } else if (diffDays === 1) {
+    return 'Yesterday';
+  } else if (diffDays < 7) {
+    return `${diffDays} days ago`;
+  } else if (diffDays < 30) {
+    const weeks = Math.floor(diffDays / 7);
+    return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+  } else {
+    return date.toLocaleDateString();
   }
-  return [...initialLeads];
 };
 
-// Save leads to localStorage
-const saveLeads = (leads: Lead[]) => {
-  localStorage.setItem('leadflow_leads', JSON.stringify(leads));
-};
-
-// Generate a unique ID that includes user info
-const generateUniqueId = (userEmail?: string): string => {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 10000);
-  const userPart = userEmail ? userEmail.substring(0, 4).replace(/[@.]/g, '') : 'guest';
-  return `${userPart}-${timestamp}-${random}`;
-};
-
-// Initialize with stored or initial data
-let leads = getStoredLeads();
-
-// Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// API simulation functions
+// Simulated leads service
 export const leadsService = {
   // Get all leads
   getLeads: async (): Promise<Lead[]> => {
-    await delay(600); // Simulate network delay
-    return [...leads];
+    await delay(800);
+    // Sort leads by date, newest first
+    return [...leads].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   },
-
+  
+  // Get a specific lead by ID
+  getLead: async (id: string): Promise<Lead | undefined> => {
+    await delay(300);
+    return leads.find(lead => lead.id === id);
+  },
+  
   // Get leads for a specific user by email
   getUserLeads: async (email: string): Promise<Lead[]> => {
     await delay(600);
@@ -151,104 +165,20 @@ export const leadsService = {
     await delay(600);
     return leads.filter(lead => lead.isGuest === true);
   },
-
-  // Get user leads (for admin dashboard)
-  getRegisteredUserLeads: async (): Promise<Lead[]> => {
-    await delay(600);
-    return leads.filter(lead => lead.isGuest === false);
-  },
-
-  // Get leads for a user (used by components)
-  getLeadsForUser: async (userId?: string): Promise<Lead[]> => {
-    await delay(600);
-    return leads.filter(lead => lead.email === userId && !lead.isGuest);
-  },
-
-  // Get leads for a business (used by components)
-  getLeadsForBusiness: async (businessId?: string): Promise<Lead[]> => {
-    await delay(600);
-    // Placeholder implementation - in a real app would filter by business ID
-    return leads;
-  },
-
-  // Get leads for a team (used by components)
-  getLeadsForTeam: async (teamId?: string): Promise<Lead[]> => {
-    await delay(600);
-    // Placeholder implementation - in a real app would filter by team ID
-    return leads;
-  },
   
-  // Get leads assigned to a specific team member
-  getLeadsForTeamMember: async (teamMemberId: string): Promise<Lead[]> => {
-    await delay(600);
-    return leads.filter(lead => lead.assignedTeamMemberId === teamMemberId);
-  },
-
-  // Get unassigned leads
-  getUnassignedLeads: async (): Promise<Lead[]> => {
-    await delay(600);
-    return leads.filter(lead => !lead.assignedTeamMemberId);
-  },
-
-  // Get lead by ID
-  getLead: async (id: string): Promise<Lead | undefined> => {
-    await delay(300);
-    return leads.find(lead => lead.id === id);
-  },
-
-  // Update lead status
-  updateLeadStatus: async (leadId: string | number, status: LeadStatus): Promise<Lead | undefined> => {
-    await delay(500);
-    const id = typeof leadId === 'number' ? String(leadId) : leadId;
-    const index = leads.findIndex(lead => lead.id === id);
-    
-    if (index !== -1) {
-      const oldStatus = leads[index].status;
-      leads[index] = { ...leads[index], status };
-      saveLeads(leads);
-      
-      // Send email notification about status update
-      await emailService.sendStatusUpdateNotification(leads[index], status);
-      
-      // If the lead is converted or lost, and it's assigned to a team member,
-      // automatically assign a new lead to that team member
-      if ((status === 'converted' || status === 'lost') && 
-          leads[index].assignedTeamMemberId && 
-          (oldStatus !== 'converted' && oldStatus !== 'lost')) {
-        
-        const teamMemberId = leads[index].assignedTeamMemberId;
-        
-        // Find a new lead to assign
-        const newLeadsForAssignment = await leadsService.getUnassignedLeads();
-        const newLeadToAssign = newLeadsForAssignment.find(l => 
-          l.status !== 'converted' && 
-          l.status !== 'lost'
-        );
-        
-        if (newLeadToAssign) {
-          await leadsService.assignLeadToTeamMember(newLeadToAssign.id, teamMemberId);
-        }
-      }
-      
-      toast.success("Lead status updated successfully");
-      return leads[index];
-    }
-    
-    toast.error("Failed to update lead status");
-    return undefined;
-  },
-
   // Add a new lead
-  addLead: async (lead: Omit<Lead, 'id' | 'score' | 'lastActivity' | 'interactions'>, isGuest: boolean = true): Promise<Lead> => {
-    await delay(800);
+  addLead: async (lead: Omit<Lead, 'id' | 'lastActivity' | 'score' | 'interactions' | 'createdAt'>, isGuest: boolean = true): Promise<Lead> => {
+    await delay(500);
     
-    // Generate unique ID using the user's email if available
     const id = generateUniqueId(lead.email);
+    const currentDate = new Date();
+    const formattedDate = formatDate(currentDate);
     
-    // Calculate an AI score based on message length and requestType
-    let score = Math.floor(Math.random() * 40) + 30; // Base score 30-70
-    if (lead.message.length > 100) score += 15;
-    if (lead.requestType === 'Demo Request') score += 20;
+    // Calculate an initial lead score based on request type and being a registered user
+    let score = isGuest ? 30 : 60;
+    if (lead.requestType === 'Demo Request') score += 15;
+    if (lead.requestType === 'Partnership') score += 20;
+    if (lead.requestType === 'Pricing') score += 15;
     if (lead.requestType === 'Product Inquiry') score += 10;
     score = Math.min(score, 99); // Cap at 99
     
@@ -256,92 +186,81 @@ export const leadsService = {
     const newLead: Lead = {
       id,
       ...lead,
-      name: lead.name || 'Anonymous User', // Ensure name is never empty
+      name: lead.name || "Unknown User", // Ensure we have a name
+      lastActivity: formattedDate,
       score,
-      lastActivity: 'Just now',
-      interactions: 1,
+      interactions: 0,
       isGuest,
-      createdById: isGuest ? undefined : lead.email // Store the creator's ID (email) for registered users
+      createdAt: currentDate,
+      createdById: lead.email // Store the creator's email for filtering
     };
     
-    leads = [newLead, ...leads];
-    saveLeads(leads);
-    
-    // If this is a new lead and there are team members, try to assign it automatically
-    if (lead.status === 'new') {
-      const availableTeamMember = await teamService.getNextAvailableTeamMember();
-      
-      if (availableTeamMember) {
-        await leadsService.assignLeadToTeamMember(newLead.id, availableTeamMember.id);
-      }
-    }
-    
-    // If it's a guest lead, send welcome email
-    if (isGuest) {
-      await emailService.sendWelcomeEmail(newLead.name, newLead.email);
-    }
-    
-    toast.success("New request added successfully");
+    leads.push(newLead);
     return newLead;
   },
-
-  // Add interaction to a lead
-  addInteraction: async (id: string, message: string): Promise<Lead | undefined> => {
-    await delay(400);
-    const index = leads.findIndex(lead => lead.id === id);
-    if (index !== -1) {
-      leads[index] = { 
-        ...leads[index], 
-        interactions: leads[index].interactions + 1,
-        lastActivity: 'Just now'
-      };
-      saveLeads(leads);
-      toast.success("Interaction recorded");
-      return leads[index];
-    }
-    toast.error("Failed to record interaction");
-    return undefined;
-  },
-
-  // Assign lead to team member
-  assignLeadToTeamMember: async (leadId: string, teamMemberId: string): Promise<Lead | undefined> => {
-    await delay(600);
-    const index = leads.findIndex(lead => lead.id === leadId);
+  
+  // Update a lead's status
+  updateLeadStatus: async (id: string, status: LeadStatus): Promise<Lead | undefined> => {
+    await delay(500);
     
-    if (index !== -1) {
-      leads[index] = { ...leads[index], assignedTeamMemberId: teamMemberId };
-      saveLeads(leads);
-      
-      // Add the lead ID to the team member's assigned leads
-      await teamService.assignLeadToTeamMember(teamMemberId, leadId);
-      
-      // Get team member name for notification
-      const teamMember = await teamService.getTeamMemberById(teamMemberId);
-      
-      if (teamMember) {
-        // Send email notification about team assignment
-        await emailService.sendTeamAssignmentNotification(leads[index], teamMember.name);
-      }
-      
-      toast.success("Lead assigned to team member");
-      return leads[index];
-    }
+    const leadIndex = leads.findIndex(lead => lead.id === id);
+    if (leadIndex === -1) return undefined;
     
-    toast.error("Failed to assign lead");
-    return undefined;
+    const updatedLead = {
+      ...leads[leadIndex],
+      status,
+      lastActivity: 'Just now'
+    };
+    
+    leads[leadIndex] = updatedLead;
+    return updatedLead;
   },
-
+  
+  // Assign a lead to a team member
+  assignLead: async (id: string, assignedTo: string): Promise<Lead | undefined> => {
+    await delay(500);
+    
+    const leadIndex = leads.findIndex(lead => lead.id === id);
+    if (leadIndex === -1) return undefined;
+    
+    const updatedLead = {
+      ...leads[leadIndex],
+      assignedTo,
+      lastActivity: 'Just now'
+    };
+    
+    leads[leadIndex] = updatedLead;
+    return updatedLead;
+  },
+  
   // Delete a lead
   deleteLead: async (id: string): Promise<boolean> => {
     await delay(500);
+    
     const initialLength = leads.length;
     leads = leads.filter(lead => lead.id !== id);
-    if (leads.length < initialLength) {
-      saveLeads(leads);
-      toast.success("Lead deleted successfully");
-      return true;
-    }
-    toast.error("Failed to delete lead");
-    return false;
+    return initialLength > leads.length;
+  },
+  
+  // Add an interaction to a lead
+  addInteraction: async (id: string, message: string): Promise<Lead | undefined> => {
+    await delay(500);
+    
+    const leadIndex = leads.findIndex(lead => lead.id === id);
+    if (leadIndex === -1) return undefined;
+    
+    // Create a copy of the lead and update
+    const updatedLead = {
+      ...leads[leadIndex],
+      interactions: leads[leadIndex].interactions + 1,
+      lastActivity: 'Just now',
+      notes: [
+        ...(leads[leadIndex].notes || []),
+        message
+      ]
+    };
+    
+    leads[leadIndex] = updatedLead;
+    return updatedLead;
   }
 };
