@@ -49,6 +49,8 @@ const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
     
     try {
       // Create a new lead with the form data
+      // Important: Setting isGuest explicitly to false, and removing the second parameter
+      // which was causing a duplicate submission
       await leadsService.addLead({
         name: user.name,
         email: user.email,
@@ -56,7 +58,7 @@ const NewLeadForm = ({ onLeadAdded }: NewLeadFormProps) => {
         message: data.message,
         status: 'new',
         isGuest: false
-      }, false);
+      });
       
       // Call the onLeadAdded callback
       onLeadAdded(data);
