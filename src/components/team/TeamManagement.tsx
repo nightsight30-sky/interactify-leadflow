@@ -76,6 +76,7 @@ const TeamManagement = () => {
       // Refresh both lead lists
       fetchUnassignedLeads();
       fetchAssignedLeads(selectedTeamMember.id);
+      toast.success(`Lead assigned to ${selectedTeamMember.name}`);
     } catch (error) {
       console.error('Error assigning lead:', error);
       toast.error('Failed to assign lead');
