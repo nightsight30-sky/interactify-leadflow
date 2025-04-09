@@ -39,12 +39,12 @@ const LeadCard = ({ lead, isAdmin = false, onLeadUpdated }: LeadCardProps) => {
         <div className="flex items-center space-x-3">
           <Avatar className="h-10 w-10">
             <AvatarFallback className="bg-primary/10 text-primary">
-              {getInitials(lead.name || 'Unknown')}
+              {getInitials(lead.name)}
             </AvatarFallback>
           </Avatar>
           <div>
-            <CardTitle className="text-base font-semibold">{lead.name || 'Unknown User'}</CardTitle>
-            <p className="text-sm text-gray-500">{lead.email || 'No email provided'}</p>
+            <CardTitle className="text-base font-semibold">{lead.name}</CardTitle>
+            <p className="text-sm text-gray-500">{lead.email}</p>
           </div>
         </div>
         

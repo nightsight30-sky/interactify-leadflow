@@ -1,7 +1,6 @@
 
 import { Lead } from '@/utils/leadsService';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Loader2 } from 'lucide-react';
 
 interface MessageListProps {
   leads: Lead[];
@@ -13,57 +12,75 @@ interface MessageListProps {
 const MessageList = ({ leads, selectedLead, onSelectLead, isLoading }: MessageListProps) => {
   if (isLoading) {
     return (
-      <div className="space-y-3 px-4 py-2">
-        {Array(5).fill(0).map((_, index) => (
-          <div key={index} className="flex gap-3 items-center">
-            <Skeleton className="h-10 w-10 rounded-full" />
-            <div className="space-y-2 flex-1">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-3 w-3/4" />
-            </div>
-          </div>
-        ))}
+      <div className="flex flex-col items-center justify-center h-full py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-sm text-muted-foreground">Loading messages...</p>
       </div>
     );
   }
   
   if (leads.length === 0) {
     return (
-      <div className="flex justify-center items-center h-60">
-        <p className="text-gray-500 text-sm">No messages found</p>
+      <div className="flex flex-col items-center justify-center h-full py-8">
+        <p className="text-sm text-muted-foreground">No messages found</p>
       </div>
     );
   }
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  };
   
   return (
-    <div>
+    <div className="divide-y">
       {leads.map((lead) => (
-        <button
+        <div
           key={lead.id}
-          onClick={() => onSelectLead(lead)}
-          className={`w-full text-left p-4 border-b hover:bg-gray-50 transition-colors flex gap-3 items-start ${
-            selectedLead?.id === lead.id ? 'bg-blue-50 hover:bg-blue-50' : ''
+          className={`p-4 cursor-pointer transition-colors hover:bg-muted/50 ${
+            selectedLead?.id === lead.id ? 'bg-muted' : ''
           }`}
+          onClick={() => onSelectLead(lead)}
         >
-          <Avatar className="h-10 w-10 flex-shrink-0">
-            <AvatarFallback className="bg-primary/10 text-primary">
-              {getInitials(lead.name)}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-center mb-1">
-              <h4 className="font-medium text-sm truncate">{lead.name}</h4>
-              <span className="text-xs text-gray-500">{lead.lastActivity}</span>
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                  {lead.name.charAt(0).toUpperCase()}
+                </div>
+                {lead.isGuest ? (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-gray-300"></span>
+                ) : (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-green-500"></span>
+                )}
+              </div>
+              <div>
+                <div className="font-medium">{lead.name}</div>
+                <div className="text-xs text-muted-foreground">{lead.email}</div>
+              </div>
             </div>
-            <p className="text-xs text-gray-500 mb-1 truncate">{lead.email}</p>
-            <p className="text-xs truncate">{lead.message}</p>
+            <div className="text-xs text-muted-foreground">{lead.lastActivity}</div>
           </div>
-        </button>
+          <div className="mt-2">
+            <div className="text-sm font-medium text-primary">{lead.requestType}</div>
+            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+              {lead.message}
+            </p>
+          </div>
+          <div className="flex justify-between items-center mt-2">
+            <div className="flex space-x-1">
+              <span className={`px-2 py-0.5 text-xs rounded-full ${
+                lead.status === 'new' ? 'bg-blue-100 text-blue-800' :
+                lead.status === 'contacted' ? 'bg-yellow-100 text-yellow-800' :
+                lead.status === 'qualified' ? 'bg-green-100 text-green-800' :
+                lead.status === 'converted' ? 'bg-indigo-100 text-indigo-800' :
+                'bg-red-100 text-red-800'
+              }`}>
+                {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
+              </span>
+            </div>
+            {lead.score >= 70 && (
+              <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-800">
+                High Value
+              </span>
+            )}
+          </div>
+        </div>
       ))}
     </div>
   );

@@ -9,19 +9,13 @@ import {
   Settings, HelpCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useUser } from '@/context/UserContext';
 
 const AdminProfile = () => {
   const [notifications, setNotifications] = useState(true);
-  const { user } = useUser();
   
   const toggleNotifications = () => {
     setNotifications(!notifications);
     toast.success(`Notifications ${notifications ? 'disabled' : 'enabled'}`);
-  };
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
   return (
@@ -35,13 +29,11 @@ const AdminProfile = () => {
             <div className="flex flex-col items-center space-y-4">
               <Avatar className="h-24 w-24">
                 <AvatarImage src="/placeholder.svg" alt="Admin" />
-                <AvatarFallback className="bg-primary text-white text-xl">
-                  {user ? getInitials(user.name) : 'AD'}
-                </AvatarFallback>
+                <AvatarFallback className="bg-primary text-white text-xl">AD</AvatarFallback>
               </Avatar>
               <div className="text-center">
-                <h3 className="text-lg font-semibold">{user?.name || "Admin User"}</h3>
-                <p className="text-sm text-gray-500">{user?.email || "admin@leadflow.com"}</p>
+                <h3 className="text-lg font-semibold">Admin User</h3>
+                <p className="text-sm text-gray-500">admin@leadflow.com</p>
                 <Badge className="mt-2">Administrator</Badge>
               </div>
               <Button variant="outline" size="sm" className="w-full">

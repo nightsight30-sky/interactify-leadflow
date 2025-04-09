@@ -43,8 +43,7 @@ const LeadForm = () => {
         email: data.email,
         requestType: data.requestType,
         message: data.message,
-        status: 'new',
-        isGuest: true // Add the required isGuest property
+        status: 'new'
       }, true); // explicitly passing true to mark as a guest lead
       
       form.reset();
