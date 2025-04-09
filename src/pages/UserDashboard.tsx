@@ -103,7 +103,8 @@ const UserDashboard = () => {
         message: data.message,
         status: 'new',
         createdBy: user?.name, // Add creator's name
-        createdById: userEmail // Add creator's email ID
+        createdById: userEmail, // Add creator's email ID
+        isGuest: false // Add this property to fix the TypeScript error
       }, false); // false means it's a registered user's lead, not a guest
       
       toast({

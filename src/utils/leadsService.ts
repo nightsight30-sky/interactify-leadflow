@@ -166,6 +166,18 @@ export const leadsService = {
     return leads.filter(lead => lead.isGuest === true);
   },
   
+  // Get unassigned leads
+  getUnassignedLeads: async (): Promise<Lead[]> => {
+    await delay(600);
+    return leads.filter(lead => !lead.assignedTo);
+  },
+  
+  // Get leads assigned to a specific team member
+  getLeadsForTeamMember: async (teamMemberId: string): Promise<Lead[]> => {
+    await delay(600);
+    return leads.filter(lead => lead.assignedTo === teamMemberId);
+  },
+  
   // Add a new lead
   addLead: async (lead: Omit<Lead, 'id' | 'lastActivity' | 'score' | 'interactions' | 'createdAt'>, isGuest: boolean = true): Promise<Lead> => {
     await delay(500);
@@ -226,6 +238,23 @@ export const leadsService = {
     const updatedLead = {
       ...leads[leadIndex],
       assignedTo,
+      lastActivity: 'Just now'
+    };
+    
+    leads[leadIndex] = updatedLead;
+    return updatedLead;
+  },
+  
+  // Assign lead to team member (this was missing)
+  assignLeadToTeamMember: async (id: string, teamMemberId: string): Promise<Lead | undefined> => {
+    await delay(500);
+    
+    const leadIndex = leads.findIndex(lead => lead.id === id);
+    if (leadIndex === -1) return undefined;
+    
+    const updatedLead = {
+      ...leads[leadIndex],
+      assignedTo: teamMemberId,
       lastActivity: 'Just now'
     };
     
