@@ -139,11 +139,8 @@ export const leadsService = {
   // Get leads for a specific user by email
   getUserLeads: async (email: string): Promise<Lead[]> => {
     await delay(600);
-    // Return leads that match the user's email (either they created it or it was assigned to them)
-    return leads.filter(lead => 
-      (lead.email === email && lead.isGuest === false) || 
-      (lead.createdById === email)
-    );
+    // Return leads that match the user's email AND have isGuest set to false
+    return leads.filter(lead => lead.email === email && lead.isGuest === false);
   },
 
   // Get guest leads (for admin dashboard)
@@ -252,7 +249,7 @@ export const leadsService = {
     if (lead.requestType === 'Product Inquiry') score += 10;
     score = Math.min(score, 99); // Cap at 99
     
-    // Ensure the name is properly set
+    // Ensure the name is properly set (fixes the issue with registered users)
     const newLead: Lead = {
       id,
       ...lead,

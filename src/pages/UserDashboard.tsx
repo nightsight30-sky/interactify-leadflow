@@ -98,7 +98,7 @@ const UserDashboard = () => {
     try {
       // Create a new lead with the form data and ensure user's name is used
       await leadsService.addLead({
-        name: user?.name || 'Anonymous User', // Ensure we use the user's actual name
+        name: user?.name || 'User',
         email: userEmail,
         requestType: data.requestType,
         message: data.message,
