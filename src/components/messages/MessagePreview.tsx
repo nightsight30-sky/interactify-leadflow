@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Loader2, Send, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { emailService } from '@/utils/emailService';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface MessagePreviewProps {
   lead: Lead | null;
@@ -20,6 +21,20 @@ const MessagePreview = ({ lead, onSendMessage, isLoading = false }: MessagePrevi
   const [message, setMessage] = useState('');
   const [subject, setSubject] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [messages, setMessages] = useState<{ content: string; isAdmin: boolean; timestamp: string }[]>([]);
+
+  // Load or initialize messages when lead changes
+  useEffect(() => {
+    if (lead?.interactions) {
+      setMessages(lead.interactions.map(interaction => ({
+        content: interaction.message,
+        isAdmin: interaction.isAdmin,
+        timestamp: interaction.timestamp || new Date().toLocaleTimeString()
+      })));
+    } else {
+      setMessages([]);
+    }
+  }, [lead]);
   
   const handleSendMessage = async () => {
     if (!lead || !message.trim()) return;
@@ -35,6 +50,14 @@ const MessagePreview = ({ lead, onSendMessage, isLoading = false }: MessagePrevi
         emailSubject, 
         message
       );
+      
+      // Add message to local state immediately for better UX
+      const newMessage = {
+        content: message,
+        isAdmin: true,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setMessages(prev => [...prev, newMessage]);
       
       // Call the parent component's handler if provided
       if (onSendMessage) {
@@ -111,12 +134,43 @@ const MessagePreview = ({ lead, onSendMessage, isLoading = false }: MessagePrevi
             </div>
           </div>
           
-          <div>
-            <div className="text-sm font-medium mb-2">Message:</div>
-            <div className="px-4 py-3 bg-primary/5 rounded-lg border text-sm">
-              {lead.message}
-            </div>
-          </div>
+          <ScrollArea className="h-[200px] pr-4">
+            {messages.length > 0 ? (
+              <div className="space-y-3">
+                {/* Initial message from lead */}
+                <div className="flex justify-end">
+                  <div className="max-w-[75%] bg-blue-500 text-white rounded-2xl rounded-tr-none p-3">
+                    <p className="text-sm">{lead.message}</p>
+                    <p className="text-xs text-blue-100 text-right mt-1">
+                      {lead.lastActivity || "Recently"}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Conversation messages */}
+                {messages.map((msg, index) => (
+                  <div key={index} className={`flex ${msg.isAdmin ? 'justify-start' : 'justify-end'}`}>
+                    <div className={`max-w-[75%] p-3 rounded-2xl ${
+                      msg.isAdmin 
+                        ? 'bg-gray-100 text-gray-800 rounded-tl-none' 
+                        : 'bg-blue-500 text-white rounded-tr-none'
+                    }`}>
+                      <p className="text-sm">{msg.content}</p>
+                      <p className={`text-xs text-right mt-1 ${
+                        msg.isAdmin ? 'text-gray-500' : 'text-blue-100'
+                      }`}>
+                        {msg.timestamp}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                <p>No message history yet</p>
+              </div>
+            )}
+          </ScrollArea>
         </div>
         
         <div className="border-t pt-4">
@@ -129,29 +183,26 @@ const MessagePreview = ({ lead, onSendMessage, isLoading = false }: MessagePrevi
             className="mb-3"
           />
           
-          <div className="flex flex-col">
+          <div className="flex">
             <Textarea
               placeholder="Type your message here..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              rows={3}
-              className="mb-3 resize-none"
+              rows={2}
+              className="flex-1 resize-none rounded-r-none focus-visible:ring-0 focus-visible:ring-offset-0"
             />
             
-            <div className="flex justify-end">
-              <Button 
-                onClick={handleSendMessage}
-                disabled={!message.trim() || isSending}
-                className="w-auto"
-              >
-                {isSending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Send className="h-4 w-4 mr-2" />
-                )}
-                Send Message
-              </Button>
-            </div>
+            <Button 
+              onClick={handleSendMessage}
+              disabled={!message.trim() || isSending}
+              className="rounded-l-none bg-blue-500 hover:bg-blue-600"
+            >
+              {isSending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
           </div>
         </div>
       </CardContent>
