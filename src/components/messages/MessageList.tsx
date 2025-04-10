@@ -78,9 +78,9 @@ const MessageList = ({ leads, selectedLead, onSelectLead, isLoading }: MessageLi
               </div>
               
               {/* Message indicator */}
-              {lead.interactions && lead.interactions.length > 0 && (
+              {lead.interactions && (
                 <span className="flex items-center justify-center h-5 w-5 bg-blue-500 text-white text-xs font-medium rounded-full">
-                  {lead.interactions.length}
+                  {Array.isArray(lead.interactions) ? lead.interactions.length : lead.interactions}
                 </span>
               )}
               

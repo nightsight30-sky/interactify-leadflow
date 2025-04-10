@@ -18,6 +18,12 @@ interface LeadInteractionProps {
   onInteractionComplete: () => void;
 }
 
+interface Interaction {
+  message: string;
+  isAdmin: boolean;
+  timestamp: string;
+}
+
 const LeadInteraction = ({ 
   leadId, 
   recipientEmail, 
@@ -29,14 +35,20 @@ const LeadInteraction = ({
   const [message, setMessage] = useState('');
   const [subject, setSubject] = useState('');
   const [newStatus, setNewStatus] = useState<LeadStatus | ''>('');
-  const [interactions, setInteractions] = useState<Array<{message: string; isAdmin: boolean; timestamp: string}>>([]);
+  const [interactions, setInteractions] = useState<Interaction[]>([]);
   
   const fetchInteractions = async () => {
     try {
       // In a real app, this would fetch interactions from the server
       const lead = await leadsService.getLead(leadId);
       if (lead && lead.interactions) {
-        setInteractions(lead.interactions);
+        // Check if interactions is an array
+        if (Array.isArray(lead.interactions)) {
+          setInteractions(lead.interactions);
+        } else {
+          // If it's a number or something else, initialize with empty array
+          setInteractions([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching interactions:', error);

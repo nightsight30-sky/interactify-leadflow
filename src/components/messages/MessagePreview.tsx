@@ -26,11 +26,17 @@ const MessagePreview = ({ lead, onSendMessage, isLoading = false }: MessagePrevi
   // Load or initialize messages when lead changes
   useEffect(() => {
     if (lead?.interactions) {
-      setMessages(lead.interactions.map(interaction => ({
-        content: interaction.message,
-        isAdmin: interaction.isAdmin,
-        timestamp: interaction.timestamp || new Date().toLocaleTimeString()
-      })));
+      // Check if interactions is an array (not a number)
+      if (Array.isArray(lead.interactions)) {
+        setMessages(lead.interactions.map(interaction => ({
+          content: interaction.message,
+          isAdmin: interaction.isAdmin,
+          timestamp: interaction.timestamp || new Date().toLocaleTimeString()
+        })));
+      } else {
+        // If it's just a number, initialize with an empty array
+        setMessages([]);
+      }
     } else {
       setMessages([]);
     }
