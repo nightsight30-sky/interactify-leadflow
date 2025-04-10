@@ -72,6 +72,13 @@ const TeamManagement = () => {
     }
     
     try {
+      // Check if the team member already has 10 leads
+      const teamMemberLeads = await leadsService.getLeadsForTeamMember(selectedTeamMember.id);
+      if (teamMemberLeads.length >= 10) {
+        toast.error(`${selectedTeamMember.name} already has 10 leads assigned. Remove some leads first.`);
+        return;
+      }
+      
       await leadsService.assignLeadToTeamMember(leadId, selectedTeamMember.id);
       // Refresh both lead lists
       fetchUnassignedLeads();
@@ -104,13 +111,32 @@ const TeamManagement = () => {
     }
     
     let assignedCount = 0;
+    let skippedCount = 0;
+    
+    // Create a copy of the team members to track assigned leads during this operation
+    const teamMembersWithCount = await Promise.all(
+      activeTeamMembers.map(async (member) => {
+        const currentLeads = await leadsService.getLeadsForTeamMember(member.id);
+        return {
+          ...member,
+          currentLeadCount: currentLeads.length
+        };
+      })
+    );
     
     for (const lead of unassignedLeads) {
-      // Find team member with least assigned leads
-      let leastBusyMember = activeTeamMembers[0];
+      // Find team member with least assigned leads who has less than 10 leads
+      const availableMembers = teamMembersWithCount.filter(member => member.currentLeadCount < 10);
       
-      for (const member of activeTeamMembers) {
-        if (member.assignedLeads.length < leastBusyMember.assignedLeads.length) {
+      if (availableMembers.length === 0) {
+        skippedCount++;
+        continue; // Skip this lead as no team members have capacity
+      }
+      
+      let leastBusyMember = availableMembers[0];
+      
+      for (const member of availableMembers) {
+        if (member.currentLeadCount < leastBusyMember.currentLeadCount) {
           leastBusyMember = member;
         }
       }
@@ -118,8 +144,12 @@ const TeamManagement = () => {
       await leadsService.assignLeadToTeamMember(lead.id, leastBusyMember.id);
       
       // Update the member's assigned leads count for the next iteration
-      leastBusyMember.assignedLeads.push(lead.id);
+      leastBusyMember.currentLeadCount += 1;
       assignedCount++;
+    }
+    
+    if (skippedCount > 0) {
+      toast.info(`${skippedCount} leads remain unassigned because all team members have reached the maximum of 10 leads`);
     }
     
     toast.success(`Successfully assigned ${assignedCount} leads to team members`);
