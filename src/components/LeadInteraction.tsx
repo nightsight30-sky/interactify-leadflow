@@ -39,12 +39,11 @@ const LeadInteraction = ({
   
   const fetchInteractions = async () => {
     try {
-      // In a real app, this would fetch interactions from the server
       const lead = await leadsService.getLead(leadId);
-      if (lead && lead.interactions) {
+      if (lead) {
         // Check if interactions is an array
         if (Array.isArray(lead.interactions)) {
-          setInteractions(lead.interactions);
+          setInteractions(lead.interactions as Interaction[]);
         } else {
           // If it's a number or something else, initialize with empty array
           setInteractions([]);
@@ -52,6 +51,7 @@ const LeadInteraction = ({
       }
     } catch (error) {
       console.error('Error fetching interactions:', error);
+      setInteractions([]);
     }
   };
 
@@ -65,11 +65,12 @@ const LeadInteraction = ({
         await leadsService.addInteraction(leadId, message);
         
         // Add to local interactions for immediate display
-        setInteractions(prev => [...prev, {
+        const newInteraction: Interaction = {
           message,
           isAdmin: isAdmin,
           timestamp: new Date().toLocaleTimeString()
-        }]);
+        };
+        setInteractions(prev => [...prev, newInteraction]);
       }
       
       // Update status if changed and admin

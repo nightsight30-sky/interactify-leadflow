@@ -304,11 +304,27 @@ export const leadsService = {
     await delay(400);
     const index = leads.findIndex(lead => lead.id === id);
     if (index !== -1) {
-      leads[index] = { 
-        ...leads[index], 
-        interactions: leads[index].interactions + 1,
-        lastActivity: 'Just now'
-      };
+      // Handle different interaction types (number or array)
+      if (typeof leads[index].interactions === 'number') {
+        // If interactions is a number, increment it
+        leads[index] = { 
+          ...leads[index], 
+          interactions: (leads[index].interactions as number) + 1,
+          lastActivity: 'Just now'
+        };
+      } else if (Array.isArray(leads[index].interactions)) {
+        // If interactions is an array, push new interaction
+        (leads[index].interactions as Array<{message: string; isAdmin: boolean; timestamp: string}>).push({
+          message,
+          isAdmin: true,
+          timestamp: new Date().toLocaleTimeString()
+        });
+        leads[index] = {
+          ...leads[index],
+          lastActivity: 'Just now'
+        };
+      }
+      
       saveLeads(leads);
       toast.success("Interaction recorded");
       return leads[index];
