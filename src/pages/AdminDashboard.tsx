@@ -364,304 +364,314 @@ const AdminDashboard = () => {
           </header>
 
           <main className="flex-1 overflow-auto p-6">
-            {activeMenuTab === 'dashboard' && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col">
-                        <div className="flex justify-between items-center mb-2">
-                          <Users className="h-5 w-5 opacity-70" />
-                          <ChevronUp className="h-4 w-4" />
-                        </div>
-                        <div className="text-2xl font-bold">
-                          {leads.length}
-                        </div>
-                        <div className="text-sm opacity-80">
-                          Total Requests
-                        </div>
-                        <div className="text-xs mt-2 flex items-center opacity-80">
-                          <ChevronUp className="h-3 w-3 mr-1" />
-                          <span>12% from last week</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white">
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col">
-                        <div className="flex justify-between items-center mb-2">
-                          <CheckCircle className="h-5 w-5 opacity-70" />
-                          <ChevronUp className="h-4 w-4" />
-                        </div>
-                        <div className="text-2xl font-bold">
-                          {leads.filter(lead => lead.status === 'converted').length}
-                        </div>
-                        <div className="text-sm opacity-80">
-                          Completed
-                        </div>
-                        <div className="text-xs mt-2 flex items-center opacity-80">
-                          <ChevronUp className="h-3 w-3 mr-1" />
-                          <span>8% from last month</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white">
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col">
-                        <div className="flex justify-between items-center mb-2">
-                          <AlertCircle className="h-5 w-5 opacity-70" />
-                          <ChevronDown className="h-4 w-4" />
-                        </div>
-                        <div className="text-2xl font-bold">
-                          {leads.filter(lead => lead.status === 'new').length}
-                        </div>
-                        <div className="text-sm opacity-80">
-                          New Requests
-                        </div>
-                        <div className="text-xs mt-2 flex items-center opacity-80">
-                          <ChevronDown className="h-3 w-3 mr-1" />
-                          <span>3% from yesterday</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col">
-                        <div className="flex justify-between mb-2">
-                          <span className="text-sm font-medium">Completion Rate</span>
-                          <span className="font-bold text-green-600">{taskProgress}%</span>
-                        </div>
-                        <Progress value={taskProgress} className="h-2 mb-4" />
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div className="flex flex-col">
-                            <span className="text-gray-500">Completed</span>
-                            <span className="font-bold">{tasksCompleted}</span>
+            <div className="container mx-auto max-w-[1400px]">
+              {activeMenuTab === 'dashboard' && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                      <CardContent className="pt-6">
+                        <div className="flex flex-col">
+                          <div className="flex justify-between items-center mb-2">
+                            <Users className="h-5 w-5 opacity-70" />
+                            <ChevronUp className="h-4 w-4" />
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-gray-500">Total</span>
-                            <span className="font-bold">{leads.length}</span>
+                          <div className="text-2xl font-bold">
+                            {leads.length}
+                          </div>
+                          <div className="text-sm opacity-80">
+                            Total Requests
+                          </div>
+                          <div className="text-xs mt-2 flex items-center opacity-80">
+                            <ChevronUp className="h-3 w-3 mr-1" />
+                            <span>12% from last week</span>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <LeadStats />
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">Recent Leads</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {isLoadingLeads ? (
-                        <div className="space-y-4">
-                          {Array(3).fill(0).map((_, i) => (
-                            <div key={i} className="flex items-center space-x-4 animate-pulse">
-                              <div className="rounded-full bg-gray-200 h-10 w-10"></div>
-                              <div className="space-y-2 flex-1">
-                                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                              </div>
-                            </div>
-                          ))}
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white">
+                      <CardContent className="pt-6">
+                        <div className="flex flex-col">
+                          <div className="flex justify-between items-center mb-2">
+                            <CheckCircle className="h-5 w-5 opacity-70" />
+                            <ChevronUp className="h-4 w-4" />
+                          </div>
+                          <div className="text-2xl font-bold">
+                            {leads.filter(lead => lead.status === 'converted').length}
+                          </div>
+                          <div className="text-sm opacity-80">
+                            Completed
+                          </div>
+                          <div className="text-xs mt-2 flex items-center opacity-80">
+                            <ChevronUp className="h-3 w-3 mr-1" />
+                            <span>8% from last month</span>
+                          </div>
                         </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {leads.slice(0, 3).map(lead => (
-                            <div key={lead.id} className="flex items-center space-x-4 p-2 hover:bg-gray-50 rounded-md transition-colors cursor-pointer">
-                              <Avatar className="h-10 w-10">
-                                <AvatarFallback className={`${
-                                  lead.status === 'new' ? 'bg-blue-100 text-blue-600' :
-                                  lead.status === 'contacted' ? 'bg-purple-100 text-purple-600' :
-                                  lead.status === 'qualified' ? 'bg-amber-100 text-amber-600' :
-                                  lead.status === 'converted' ? 'bg-green-100 text-green-600' :
-                                  'bg-red-100 text-red-600'
-                                }`}>
-                                  {lead.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1">
-                                <div className="font-medium">{lead.name}</div>
-                                <div className="text-sm text-gray-500">{lead.email}</div>
-                              </div>
-                              <Badge>{lead.status}</Badge>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white">
+                      <CardContent className="pt-6">
+                        <div className="flex flex-col">
+                          <div className="flex justify-between items-center mb-2">
+                            <AlertCircle className="h-5 w-5 opacity-70" />
+                            <ChevronDown className="h-4 w-4" />
+                          </div>
+                          <div className="text-2xl font-bold">
+                            {leads.filter(lead => lead.status === 'new').length}
+                          </div>
+                          <div className="text-sm opacity-80">
+                            New Requests
+                          </div>
+                          <div className="text-xs mt-2 flex items-center opacity-80">
+                            <ChevronDown className="h-3 w-3 mr-1" />
+                            <span>3% from yesterday</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="flex flex-col">
+                          <div className="flex justify-between mb-2">
+                            <span className="text-sm font-medium">Completion Rate</span>
+                            <span className="font-bold text-green-600">{taskProgress}%</span>
+                          </div>
+                          <Progress value={taskProgress} className="h-2 mb-4" />
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="flex flex-col">
+                              <span className="text-gray-500">Completed</span>
+                              <span className="font-bold">{tasksCompleted}</span>
                             </div>
-                          ))}
-                          
-                          <Button 
-                            variant="outline" 
-                            className="w-full" 
-                            onClick={() => setActiveMenuTab('leads')}
-                          >
-                            View All Leads
+                            <div className="flex flex-col">
+                              <span className="text-gray-500">Total</span>
+                              <span className="font-bold">{leads.length}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  
+                  <LeadStats />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">Recent Leads</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {isLoadingLeads ? (
+                          <div className="space-y-4">
+                            {Array(3).fill(0).map((_, i) => (
+                              <div key={i} className="flex items-center space-x-4 animate-pulse">
+                                <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+                                <div className="space-y-2 flex-1">
+                                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {leads.slice(0, 3).map(lead => (
+                              <div key={lead.id} className="flex items-center space-x-4 p-2 hover:bg-gray-50 rounded-md transition-colors cursor-pointer">
+                                <Avatar className="h-10 w-10">
+                                  <AvatarFallback className={`${
+                                    lead.status === 'new' ? 'bg-blue-100 text-blue-600' :
+                                    lead.status === 'contacted' ? 'bg-purple-100 text-purple-600' :
+                                    lead.status === 'qualified' ? 'bg-amber-100 text-amber-600' :
+                                    lead.status === 'converted' ? 'bg-green-100 text-green-600' :
+                                    'bg-red-100 text-red-600'
+                                  }`}>
+                                    {lead.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="font-medium">{lead.name}</div>
+                                  <div className="text-sm text-gray-500">{lead.email}</div>
+                                </div>
+                                <Badge>{lead.status}</Badge>
+                              </div>
+                            ))}
+                            
+                            <Button 
+                              variant="outline" 
+                              className="w-full" 
+                              onClick={() => setActiveMenuTab('leads')}
+                            >
+                              View All Leads
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">Quick Actions</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <Button className="w-full" onClick={() => setActiveMenuTab('team')}>
+                            <UserCog className="mr-2 h-4 w-4" />
+                            Manage Team
+                          </Button>
+                          <Button className="w-full" variant="outline" onClick={() => setActiveMenuTab('messages')}>
+                            <Mail className="mr-2 h-4 w-4" />
+                            View Messages
+                          </Button>
+                          <Button className="w-full" variant="outline" onClick={() => setActiveMenuTab('analytics')}>
+                            <BarChartBig className="mr-2 h-4 w-4" />
+                            View Analytics
                           </Button>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">Quick Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <Button className="w-full" onClick={() => setActiveMenuTab('team')}>
-                          <UserCog className="mr-2 h-4 w-4" />
-                          Manage Team
-                        </Button>
-                        <Button className="w-full" variant="outline" onClick={() => setActiveMenuTab('messages')}>
-                          <Mail className="mr-2 h-4 w-4" />
-                          View Messages
-                        </Button>
-                        <Button className="w-full" variant="outline" onClick={() => setActiveMenuTab('analytics')}>
-                          <BarChartBig className="mr-2 h-4 w-4" />
-                          View Analytics
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {activeMenuTab === 'analytics' && <AnalyticsDashboard />}
-            
-            {activeMenuTab === 'leads' && (
-              <div className="space-y-6">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      className="pl-9"
-                      placeholder="Search leads..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Tabs value={statusFilter} onValueChange={(value) => setStatusFilter(value as LeadStatus | 'all')}>
-                      <TabsList>
-                        {statusOptions.map((option) => (
-                          <TabsTrigger key={option.value} value={option.value}>
-                            {option.label}
-                          </TabsTrigger>
-                        ))}
-                      </TabsList>
-                    </Tabs>
-                    
-                    <Button 
-                      variant={guestFilter === true ? "default" : "outline"} 
-                      onClick={() => setGuestFilter(guestFilter === true ? null : true)}
-                    >
-                      Guest
-                    </Button>
-                    
-                    <Button 
-                      variant={guestFilter === false ? "default" : "outline"} 
-                      onClick={() => setGuestFilter(guestFilter === false ? null : false)}
-                    >
-                      Registered
-                    </Button>
-                    
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => {
-                        setSearchQuery('');
-                        setStatusFilter('all');
-                        setGuestFilter(null);
-                      }}
-                    >
-                      <Filter className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                {isLoadingLeads ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {Array(6).fill(0).map((_, i) => (
-                      <Card key={i} className="animate-pulse">
-                        <CardHeader className="p-4">
-                          <div className="flex items-center space-x-4">
-                            <div className="rounded-full bg-gray-200 h-10 w-10"></div>
-                            <div className="space-y-2">
-                              <div className="h-4 bg-gray-200 rounded w-24"></div>
-                              <div className="h-3 bg-gray-200 rounded w-32"></div>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="p-4">
-                          <div className="space-y-3">
-                            <div className="h-3 bg-gray-200 rounded"></div>
-                            <div className="h-3 bg-gray-200 rounded"></div>
-                            <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : filteredLeads.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredLeads.map(lead => (
-                      <LeadCard
-                        key={lead.id}
-                        lead={lead}
-                        isAdmin={true}
-                        onLeadUpdated={handleLeadUpdated}
+              {activeMenuTab === 'analytics' && <div className="w-full"><AnalyticsDashboard /></div>}
+              
+              {activeMenuTab === 'leads' && (
+                <div className="space-y-6">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        className="pl-9"
+                        placeholder="Search leads..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                       />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="border rounded-md p-8 text-center">
-                    <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                      <Users className="h-6 w-6 text-gray-500" />
                     </div>
-                    <h3 className="text-lg font-medium mb-2">No leads found</h3>
-                    <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                      No leads match your current search and filter criteria. Try adjusting your filters or create new leads.
-                    </p>
-                    <div className="flex justify-center gap-4">
+                    
+                    <div className="flex gap-2 flex-wrap">
+                      <Tabs value={statusFilter} onValueChange={(value) => setStatusFilter(value as LeadStatus | 'all')}>
+                        <TabsList>
+                          {statusOptions.map((option) => (
+                            <TabsTrigger key={option.value} value={option.value}>
+                              {option.label}
+                            </TabsTrigger>
+                          ))}
+                        </TabsList>
+                      </Tabs>
+                      
                       <Button 
-                        variant="outline" 
+                        variant={guestFilter === true ? "default" : "outline"} 
+                        onClick={() => setGuestFilter(guestFilter === true ? null : true)}
+                      >
+                        Guest
+                      </Button>
+                      
+                      <Button 
+                        variant={guestFilter === false ? "default" : "outline"} 
+                        onClick={() => setGuestFilter(guestFilter === false ? null : false)}
+                      >
+                        Registered
+                      </Button>
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
                         onClick={() => {
                           setSearchQuery('');
                           setStatusFilter('all');
                           setGuestFilter(null);
                         }}
                       >
-                        Clear Filters
+                        <Filter className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                )}
-              </div>
-            )}
+                  
+                  {isLoadingLeads ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {Array(6).fill(0).map((_, i) => (
+                        <Card key={i} className="animate-pulse">
+                          <CardHeader className="p-4">
+                            <div className="flex items-center space-x-4">
+                              <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+                              <div className="space-y-2">
+                                <div className="h-4 bg-gray-200 rounded w-24"></div>
+                                <div className="h-3 bg-gray-200 rounded w-32"></div>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4">
+                            <div className="space-y-3">
+                              <div className="h-3 bg-gray-200 rounded"></div>
+                              <div className="h-3 bg-gray-200 rounded"></div>
+                              <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : filteredLeads.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredLeads.map(lead => (
+                        <LeadCard
+                          key={lead.id}
+                          lead={lead}
+                          isAdmin={true}
+                          onLeadUpdated={handleLeadUpdated}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="border rounded-md p-8 text-center">
+                      <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                        <Users className="h-6 w-6 text-gray-500" />
+                      </div>
+                      <h3 className="text-lg font-medium mb-2">No leads found</h3>
+                      <p className="text-gray-500 mb-4 max-w-md mx-auto">
+                        No leads match your current search and filter criteria. Try adjusting your filters or create new leads.
+                      </p>
+                      <div className="flex justify-center gap-4">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setSearchQuery('');
+                            setStatusFilter('all');
+                            setGuestFilter(null);
+                          }}
+                        >
+                          Clear Filters
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
-            {activeMenuTab === 'messages' && (
-              <MessageCenter />
-            )}
+              {activeMenuTab === 'messages' && (
+                <div className="w-full">
+                  <MessageCenter />
+                </div>
+              )}
 
-            {activeMenuTab === 'team' && (
-              <TeamManagement />
-            )}
-            
-            {activeMenuTab === 'ai' && (
-              <AIInsights />
-            )}
-            
-            {activeMenuTab === 'settings' && (
-              <AdminProfile />
-            )}
+              {activeMenuTab === 'team' && (
+                <div className="w-full">
+                  <TeamManagement />
+                </div>
+              )}
+              
+              {activeMenuTab === 'ai' && (
+                <div className="w-full">
+                  <AIInsights />
+                </div>
+              )}
+              
+              {activeMenuTab === 'settings' && (
+                <div className="w-full">
+                  <AdminProfile />
+                </div>
+              )}
+            </div>
           </main>
         </div>
       </div>

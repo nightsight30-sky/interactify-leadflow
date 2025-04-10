@@ -44,7 +44,7 @@ const LeadCard = ({ lead, isAdmin = false, onLeadUpdated }: LeadCardProps) => {
   };
 
   return (
-    <Card className="overflow-hidden transition-all duration-300 hover:shadow-md border border-gray-100">
+    <Card className="overflow-hidden transition-all duration-300 hover:shadow-md border border-gray-100 w-full">
       <CardHeader className="p-4 pb-0 flex flex-row items-start justify-between space-y-0">
         <div className="flex items-center space-x-3">
           <Avatar className="h-10 w-10">
